@@ -235,6 +235,7 @@ if TYPE_CHECKING:
         BLE = 22
         NFC = 23
         Tron = 24
+        CKB = 25
 
     class SdProtectOperationType(IntEnum):
         DISABLE = 0
@@ -654,6 +655,8 @@ if TYPE_CHECKING:
         TronUnfreezeBalanceV2Contract = 2208
         TronWithdrawUnfreeze = 2209
         TronVoteWitnessContract = 2210
+        CKBGetAddress = 5500
+        CKBAddress = 5501
         BenchmarkListNames = 9100
         BenchmarkNames = 9101
         BenchmarkRun = 9102
