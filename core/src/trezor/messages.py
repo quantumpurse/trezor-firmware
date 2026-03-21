@@ -1863,6 +1863,42 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["CardanoMessageSignature"]:
             return isinstance(msg, cls)
 
+    class CKBGetAddress(protobuf.MessageType):
+        address_n: "list[int]"
+        show_display: "bool | None"
+        network: "str"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            network: "str",
+            address_n: "list[int] | None" = None,
+            show_display: "bool | None" = None,
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBGetAddress"]:
+            return isinstance(msg, cls)
+
+    class CKBAddress(protobuf.MessageType):
+        address: "str"
+        mac: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+            mac: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBAddress"]:
+            return isinstance(msg, cls)
+
     class CipherKeyValue(protobuf.MessageType):
         address_n: "list[int]"
         key: "str"
