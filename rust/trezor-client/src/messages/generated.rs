@@ -168,7 +168,6 @@ trezor_message_impl! {
     CKBTxAckInput => MessageType_CKBTxAckInput,
     CKBTxAckOutput => MessageType_CKBTxAckOutput,
     CKBTxAckCellDep => MessageType_CKBTxAckCellDep,
-    CKBSignedTx => MessageType_CKBSignedTx,
 }
 
 #[cfg(feature = "eos")]
