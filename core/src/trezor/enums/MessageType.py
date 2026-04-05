@@ -296,4 +296,3 @@ if not utils.BITCOIN_ONLY:
     CKBTxAckInput = 5504
     CKBTxAckOutput = 5505
     CKBTxAckCellDep = 5506
-    CKBSignedTx = 5507

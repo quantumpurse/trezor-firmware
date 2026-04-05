@@ -737,7 +737,6 @@ class MessageType(IntEnum):
     CKBTxAckInput = 5504
     CKBTxAckOutput = 5505
     CKBTxAckCellDep = 5506
-    CKBSignedTx = 5507
     BenchmarkListNames = 9100
     BenchmarkNames = 9101
     BenchmarkRun = 9102
@@ -3292,23 +3291,6 @@ class CKBTxAckCellDep(protobuf.MessageType):
         cell_dep: Optional["CKBCellDep"] = None,
     ) -> None:
         self.cell_dep = cell_dep
-
-
-class CKBSignedTx(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 5507
-    FIELDS = {
-        1: protobuf.Field("signature", "bytes", repeated=False, required=True),
-        2: protobuf.Field("tx_hash", "bytes", repeated=False, required=True),
-    }
-
-    def __init__(
-        self,
-        *,
-        signature: "bytes",
-        tx_hash: "bytes",
-    ) -> None:
-        self.signature = signature
-        self.tx_hash = tx_hash
 
 
 class CipherKeyValue(protobuf.MessageType):
