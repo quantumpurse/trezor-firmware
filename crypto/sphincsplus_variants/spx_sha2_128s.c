@@ -34,4 +34,4 @@
 #include "../../vendor/sphincsplus/ref/hash_sha2.c"
 #include "../../vendor/sphincsplus/ref/thash_sha2_simple.c"
 #include "../../vendor/sphincsplus/ref/sha2.c"
-#include "../../vendor/sphincsplus/ref/randombytes.c"
+#include "randombytes_trezor.c"

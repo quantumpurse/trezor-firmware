@@ -43,4 +43,4 @@
 #include "../../vendor/sphincsplus/ref/hash_shake.c"
 #include "../../vendor/sphincsplus/ref/thash_shake_simple.c"
 #include "../../vendor/sphincsplus/ref/fips202.c"
-#include "../../vendor/sphincsplus/ref/randombytes.c"
+#include "randombytes_trezor.c"

@@ -146,6 +146,33 @@ SOURCE_MOD += [
     'embed/upymod/modtrezorcrypto/crc.c',
     'embed/upymod/modtrezorcrypto/modtrezorcrypto.c',
 ]
+
+# SPHINCS+ post-quantum signatures (used by the CKB SPHINCS+ lock script)
+# All 12 variants compiled separately with per-variant PARAMS + SPX_NAMESPACE.
+CPPPATH_MOD += [
+    'vendor/sphincsplus/ref',
+]
+# Dispatch table + HKDF (only used by SPHINCS+ key derivation today).
+SOURCE_MOD_CRYPTO += [
+    'vendor/trezor-crypto/hkdf.c',
+    'vendor/trezor-crypto/sphincsplus_dispatch.c',
+]
+# 12 variant wrapper files (each includes all needed .c with namespaced symbols)
+SOURCE_SPHINCSPLUS_VARIANTS = [
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_128f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_128s.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_192f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_192s.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_256f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_sha2_256s.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_128f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_128s.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_192f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_192s.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_256f.c',
+    'vendor/trezor-crypto/sphincsplus_variants/spx_shake_256s.c',
+]
+
 SOURCE_MOD_CRYPTO += [
     'vendor/trezor-crypto/address.c',
     'vendor/trezor-crypto/aes/aes_modes.c',
@@ -873,6 +900,18 @@ source_files = SOURCE_MOD + SOURCE_MOD_CRYPTO + SOURCE_FIRMWARE + SOURCE_MICROPY
 obj_program = []
 obj_program.extend(env.Object(source=SOURCE_MOD))
 obj_program.extend(env.Object(source=SOURCE_MOD_CRYPTO, CCFLAGS='$CCFLAGS -ftrivial-auto-var-init=zero -ffreestanding'))
+
+# SPHINCS+ 12 variants compiled via wrapper files (each self-contained).
+# -w suppresses the upstream reference implementation's warnings, and
+# -ffreestanding keeps the toolchain from pulling in hosted libc helpers
+# (matches how the rest of SOURCE_MOD_CRYPTO is built).
+obj_program.extend(
+    env.Object(
+        source=SOURCE_SPHINCSPLUS_VARIANTS,
+        CCFLAGS='$CCFLAGS -ftrivial-auto-var-init=zero -ffreestanding -w',
+    )
+)
+source_files = source_files + SOURCE_SPHINCSPLUS_VARIANTS
 if FEATURE_FLAGS["SECP256K1_ZKP"]:
     obj_program.extend(env.Object(source=SOURCE_MOD_SECP256K1_ZKP, CCFLAGS='$CCFLAGS -Wno-unused-function -ffreestanding'))
     source_files.extend(SOURCE_MOD_SECP256K1_ZKP)
