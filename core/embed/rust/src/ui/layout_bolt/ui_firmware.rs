@@ -1146,7 +1146,7 @@ impl FirmwareUI for UIBolt {
     }
 
     fn show_share_words(
-        words: heapless::Vec<TString<'static>, 33>,
+        words: heapless::Vec<TString<'static>, 72>,
         title: Option<TString<'static>>,
     ) -> Result<impl LayoutMaybeTrace, Error> {
         let layout = RootComponent::new(Frame::left_aligned(
@@ -1160,7 +1160,7 @@ impl FirmwareUI for UIBolt {
     }
 
     fn show_share_words_extended(
-        _words: heapless::Vec<TString<'static>, 33>,
+        _words: heapless::Vec<TString<'static>, 72>,
         _subtitle: Option<TString<'static>>,
         _instructions: Obj,
         _instructions_verb: Option<TString<'static>>,
