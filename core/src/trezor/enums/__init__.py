@@ -176,6 +176,7 @@ if TYPE_CHECKING:
         TXOUTPUT = 1
         TXCELLDEP = 2
         TXFINISHED = 3
+        TXSIGCHUNK = 4
 
     class BackupType(IntEnum):
         Bip39 = 0
@@ -668,6 +669,10 @@ if TYPE_CHECKING:
         CKBTxAckInput = 5504
         CKBTxAckOutput = 5505
         CKBTxAckCellDep = 5506
+        CKBSphincsPlusGetAddress = 5507
+        CKBSphincsPlusAddress = 5508
+        CKBSphincsPlusSignTx = 5509
+        CKBTxAckSigChunk = 5510
         BenchmarkListNames = 9100
         BenchmarkNames = 9101
         BenchmarkRun = 9102

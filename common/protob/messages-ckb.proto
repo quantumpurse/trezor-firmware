@@ -33,8 +33,69 @@ message CKBAddress {
     optional bytes mac = 2;                                      // authentication code for the address
 }
 
+/**
+ * Request: Get a CKB SPHINCS+ post-quantum address.
+ *
+ * The SPHINCS+ keypair is derived from the device mnemonic with HKDF-SHA256,
+ * and combined with the CKB all-in-one quantum-resistant lock script to
+ * produce a Bech32m address.
+ *
+ * Requires the device to be initialized with an extended BIP-39 mnemonic
+ * (36/54/72 words) matching the requested variant's security level.
+ *
+ * @start
+ * @next CKBSphincsPlusAddress
+ * @next Failure
+ */
+message CKBSphincsPlusGetAddress {
+    option (wire_type) = 5507;
+
+    optional uint32 account_index = 1 [default=0];               // account index fed into the HKDF info string
+    optional uint32 variant = 2 [default=49];                    // SPHINCS+ variant ID (48..=59). Default 49 = SLH-DSA-SHA2-128s
+    required string network = 3;                                 // "Mainnet" or "Testnet"
+    optional bool show_display = 4;                              // optionally show on display before sending
+    optional bool chunkify = 5;                                  // display the address in chunks of 4 characters
+}
+
+/**
+ * Response: CKB SPHINCS+ address encoded as Bech32m
+ * @end
+ */
+message CKBSphincsPlusAddress {
+    option (wire_type) = 5508;
+
+    required string address = 1;                                 // Bech32m encoded CKB address
+    required bytes lock_args = 2;                                // 32-byte Blake2b lock script args
+    required bytes public_key = 3;                               // SPHINCS+ public key bytes
+    required uint32 variant = 4;                                 // SPHINCS+ variant ID used
+}
+
+/**
+ * Request: Sign a CKB transaction using SPHINCS+ post-quantum signature.
+ *
+ * Uses the same streaming protocol as CKBSignTx (reuses CKBTxRequest,
+ * CKBTxAckInput, CKBTxAckOutput, CKBTxAckCellDep) but derives the signing
+ * key via HKDF-SHA256 + SPHINCS+ instead of BIP-32 + secp256k1.
+ *
+ * @start
+ * @next CKBTxRequest
+ * @next Failure
+ */
+message CKBSphincsPlusSignTx {
+    option (wire_type) = 5509;
+
+    optional uint32 account_index = 1 [default=0];               // account index fed into the HKDF info string
+    optional uint32 variant = 2 [default=49];                    // SPHINCS+ variant ID (48..=59)
+    required string network = 3;                                 // "Mainnet" or "Testnet"
+    required uint32 inputs_count = 4;                            // number of inputs
+    required uint32 outputs_count = 5;                           // number of outputs
+    optional uint32 cell_deps_count = 6 [default=0];             // number of cell dependencies
+    optional uint64 fee = 7;                                     // transaction fee in shannons
+    optional bool chunkify = 8;                                  // display addresses in chunks
+}
+
 // ============================================================
-// Transaction Signing Messages
+// Transaction Signing Messages (shared by ECDSA and SPHINCS+)
 // ============================================================
 
 /**
@@ -44,6 +105,17 @@ message CKBCellInput {
     required bytes previous_output_tx_hash = 1;                  // 32-byte transaction hash
     required uint32 previous_output_index = 2;                   // output index in that transaction
     optional uint64 since = 3 [default=0];                       // since field for time-lock
+
+    // Optional input cell metadata used by SPHINCS+ ckb_tx_message_all hash.
+    // All four fields must be provided together when cell_capacity is set.
+    // Cell data and type script are intentionally not carried here — the
+    // current SPHINCS+ flow only supports plain CKB transfers (empty data,
+    // no type script on inputs). Extend this message when / if the handler
+    // starts supporting sUDT, DAO, or other advanced cell patterns.
+    optional uint64 cell_capacity = 4;
+    optional bytes cell_lock_code_hash = 5;
+    optional uint32 cell_lock_hash_type = 6;
+    optional bytes cell_lock_args = 7;
 }
 
 /**
@@ -109,6 +181,14 @@ enum CKBTxRequestType {
     TXOUTPUT = 1;
     TXCELLDEP = 2;
     TXFINISHED = 3;
+    // SPHINCS+ signatures (up to ~50 KB) exceed the THP per-message buffer.
+    // After signing, the device streams the signature back as a sequence of
+    // CKBTxRequest{TXSIGCHUNK, details: {signature_offset, signature_total_size},
+    // serialized: {signature: <chunk>}} messages. Each chunk is acknowledged by
+    // the host via CKBTxAckSigChunk. The terminating TXFINISHED then carries
+    // only `tx_hash` (signature is omitted because it has already been
+    // delivered through the chunk stream).
+    TXSIGCHUNK = 4;
 }
 
 /**
@@ -116,6 +196,11 @@ enum CKBTxRequestType {
  */
 message CKBTxRequestDetails {
     optional uint32 request_index = 1;
+    // Used by TXSIGCHUNK only. `signature_offset` is the byte position of the
+    // chunk inside the full signature; `signature_total_size` is the total
+    // signature length and is set on every chunk so the host can validate.
+    optional uint32 signature_offset = 2;
+    optional uint32 signature_total_size = 3;
 }
 
 /**
@@ -154,4 +239,13 @@ message CKBTxAckCellDep {
     option (wire_type) = 5506;
 
     optional CKBCellDep cell_dep = 1;
+}
+
+/**
+ * Acknowledge a SPHINCS+ signature chunk. Empty body — host has nothing to
+ * return, the message exists only to satisfy the request/response pattern of
+ * the CKB streaming protocol.
+ */
+message CKBTxAckSigChunk {
+    option (wire_type) = 5510;
 }

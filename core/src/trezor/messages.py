@@ -1900,10 +1900,84 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["CKBAddress"]:
             return isinstance(msg, cls)
 
+    class CKBSphincsPlusGetAddress(protobuf.MessageType):
+        account_index: "int"
+        variant: "int"
+        network: "str"
+        show_display: "bool | None"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            network: "str",
+            account_index: "int | None" = None,
+            variant: "int | None" = None,
+            show_display: "bool | None" = None,
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBSphincsPlusGetAddress"]:
+            return isinstance(msg, cls)
+
+    class CKBSphincsPlusAddress(protobuf.MessageType):
+        address: "str"
+        lock_args: "AnyBytes"
+        public_key: "AnyBytes"
+        variant: "int"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+            lock_args: "AnyBytes",
+            public_key: "AnyBytes",
+            variant: "int",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBSphincsPlusAddress"]:
+            return isinstance(msg, cls)
+
+    class CKBSphincsPlusSignTx(protobuf.MessageType):
+        account_index: "int"
+        variant: "int"
+        network: "str"
+        inputs_count: "int"
+        outputs_count: "int"
+        cell_deps_count: "int"
+        fee: "int | None"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            network: "str",
+            inputs_count: "int",
+            outputs_count: "int",
+            account_index: "int | None" = None,
+            variant: "int | None" = None,
+            cell_deps_count: "int | None" = None,
+            fee: "int | None" = None,
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBSphincsPlusSignTx"]:
+            return isinstance(msg, cls)
+
     class CKBCellInput(protobuf.MessageType):
         previous_output_tx_hash: "AnyBytes"
         previous_output_index: "int"
         since: "int"
+        cell_capacity: "int | None"
+        cell_lock_code_hash: "AnyBytes | None"
+        cell_lock_hash_type: "int | None"
+        cell_lock_args: "AnyBytes | None"
 
         def __init__(
             self,
@@ -1911,6 +1985,10 @@ if TYPE_CHECKING:
             previous_output_tx_hash: "AnyBytes",
             previous_output_index: "int",
             since: "int | None" = None,
+            cell_capacity: "int | None" = None,
+            cell_lock_code_hash: "AnyBytes | None" = None,
+            cell_lock_hash_type: "int | None" = None,
+            cell_lock_args: "AnyBytes | None" = None,
         ) -> None:
             pass
 
@@ -2010,11 +2088,15 @@ if TYPE_CHECKING:
 
     class CKBTxRequestDetails(protobuf.MessageType):
         request_index: "int | None"
+        signature_offset: "int | None"
+        signature_total_size: "int | None"
 
         def __init__(
             self,
             *,
             request_index: "int | None" = None,
+            signature_offset: "int | None" = None,
+            signature_total_size: "int | None" = None,
         ) -> None:
             pass
 
@@ -2078,6 +2160,12 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckCellDep"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckSigChunk(protobuf.MessageType):
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckSigChunk"]:
             return isinstance(msg, cls)
 
     class CipherKeyValue(protobuf.MessageType):

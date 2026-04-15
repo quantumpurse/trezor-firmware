@@ -288,3 +288,7 @@ if not utils.BITCOIN_ONLY:
     CKBTxAckInput = 5504
     CKBTxAckOutput = 5505
     CKBTxAckCellDep = 5506
+    CKBSphincsPlusGetAddress = 5507
+    CKBSphincsPlusAddress = 5508
+    CKBSphincsPlusSignTx = 5509
+    CKBTxAckSigChunk = 5510

@@ -168,6 +168,10 @@ trezor_message_impl! {
     CKBTxAckInput => MessageType_CKBTxAckInput,
     CKBTxAckOutput => MessageType_CKBTxAckOutput,
     CKBTxAckCellDep => MessageType_CKBTxAckCellDep,
+    CKBSphincsPlusGetAddress => MessageType_CKBSphincsPlusGetAddress,
+    CKBSphincsPlusAddress => MessageType_CKBSphincsPlusAddress,
+    CKBSphincsPlusSignTx => MessageType_CKBSphincsPlusSignTx,
+    CKBTxAckSigChunk => MessageType_CKBTxAckSigChunk,
 }
 
 #[cfg(feature = "eos")]
