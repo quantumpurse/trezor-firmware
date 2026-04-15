@@ -32,6 +32,59 @@ def get_authenticated_address(
     )
 
 
+# SPHINCS+ variant IDs (matching ParamId in ckb-fips205-utils)
+SPHINCS_VARIANTS = {
+    "sha2-128f": 48,
+    "sha2-128s": 49,
+    "sha2-192f": 50,
+    "sha2-192s": 51,
+    "sha2-256f": 52,
+    "sha2-256s": 53,
+    "shake-128f": 54,
+    "shake-128s": 55,
+    "shake-192f": 56,
+    "shake-192s": 57,
+    "shake-256f": 58,
+    "shake-256s": 59,
+}
+
+DEFAULT_SPHINCS_VARIANT = SPHINCS_VARIANTS["sha2-128s"]
+
+
+def sphincs_get_address(
+    session: "Session",
+    network: str,
+    account_index: int = 0,
+    variant: int = DEFAULT_SPHINCS_VARIANT,
+    show_display: bool = False,
+    chunkify: bool = False,
+) -> "messages.CKBSphincsPlusAddress":
+    """Get a CKB SPHINCS+ post-quantum address.
+
+    Derives a SPHINCS+ keypair on-device via HKDF-SHA256 over the stored
+    mnemonic entropy, computes the CKB all-in-one quantum-resistant lock
+    script args, and returns a Bech32m address.
+
+    Args:
+        session: Trezor session instance
+        network: "Mainnet" or "Testnet"
+        account_index: account index fed into the HKDF info string (default 0)
+        variant: SPHINCS+ variant ID (48..=59), default 49 = sha2-128s
+        show_display: Show the address on the device screen
+        chunkify: Display address in chunks of 4 characters
+    """
+    return session.call(
+        messages.CKBSphincsPlusGetAddress(
+            account_index=account_index,
+            variant=variant,
+            network=network,
+            show_display=show_display,
+            chunkify=chunkify,
+        ),
+        expect=messages.CKBSphincsPlusAddress,
+    )
+
+
 def sign_tx(
     session: "Session",
     address_n: "Address",
@@ -66,6 +119,65 @@ def sign_tx(
     res = session.call(
         messages.CKBSignTx(
             address_n=address_n,
+            network=network,
+            inputs_count=len(inputs),
+            outputs_count=len(outputs),
+            cell_deps_count=len(cell_deps),
+            fee=fee,
+            chunkify=chunkify,
+        ),
+        expect=messages.CKBTxRequest,
+    )
+
+    while res.request_type != CKBTxRequestType.TXFINISHED:
+        if res.request_type == CKBTxRequestType.TXINPUT:
+            idx = res.details.request_index
+            res = session.call(
+                messages.CKBTxAckInput(input=inputs[idx]),
+                expect=messages.CKBTxRequest,
+            )
+        elif res.request_type == CKBTxRequestType.TXOUTPUT:
+            idx = res.details.request_index
+            res = session.call(
+                messages.CKBTxAckOutput(output=outputs[idx]),
+                expect=messages.CKBTxRequest,
+            )
+        elif res.request_type == CKBTxRequestType.TXCELLDEP:
+            idx = res.details.request_index
+            res = session.call(
+                messages.CKBTxAckCellDep(cell_dep=cell_deps[idx]),
+                expect=messages.CKBTxRequest,
+            )
+        else:
+            raise ValueError(f"Unknown request type: {res.request_type}")
+
+    return res
+
+
+def sphincs_sign_tx(
+    session: "Session",
+    inputs: list["messages.CKBCellInput"],
+    outputs: list["messages.CKBCellOutput"],
+    cell_deps: list["messages.CKBCellDep"] | None = None,
+    network: str = "Mainnet",
+    account_index: int = 0,
+    variant: int = DEFAULT_SPHINCS_VARIANT,
+    fee: int | None = None,
+    chunkify: bool = False,
+) -> "messages.CKBTxRequest":
+    """Sign a CKB transaction with a SPHINCS+ post-quantum signature.
+
+    Same streaming protocol as sign_tx but uses SPHINCS+ instead of secp256k1.
+    """
+    from .messages import CKBTxRequestType
+
+    if cell_deps is None:
+        cell_deps = []
+
+    res = session.call(
+        messages.CKBSphincsPlusSignTx(
+            account_index=account_index,
+            variant=variant,
             network=network,
             inputs_count=len(inputs),
             outputs_count=len(outputs),
