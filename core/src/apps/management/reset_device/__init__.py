@@ -105,7 +105,17 @@ async def reset_device(msg: ResetDevice) -> Success:
 
         if backup_type == BAK_T_BIP39:
             # in BIP-39 we store mnemonic string instead of the secret
-            secret = bip39.from_data(secret).encode()
+            if len(secret) > 32:
+                # Extended: generate 3 independent BIP-39 sub-phrases
+                sub_len = len(secret) // 3
+                mnemonics = []
+                for i in range(3):
+                    mnemonics.append(
+                        bip39.from_data(secret[i * sub_len : (i + 1) * sub_len])
+                    )
+                secret = " ".join(mnemonics).encode()
+            else:
+                secret = bip39.from_data(secret).encode()
 
         if not msg.entropy_check or await _entropy_check(secret):
             break
@@ -177,8 +187,24 @@ async def _entropy_check(secret: bytes) -> bool:
 
 async def _backup_bip39(mnemonic: str) -> None:
     words = mnemonic.split()
-    await layout.show_backup_intro(single_share=True, num_of_words=len(words))
-    await layout.show_and_confirm_single_share(words)
+    word_count = len(words)
+
+    if word_count in (36, 54, 72):
+        # Extended BIP-39 mnemonic: 3 concatenated sub-phrases.
+        # Show ONE intro mentioning the total length, then walk through
+        # each sub-phrase with its own "Phrase X of 3" context screen.
+        sub_len = word_count // 3
+        await layout.show_backup_intro(
+            single_share=True, num_of_words=word_count
+        )
+        for i in range(3):
+            sub_words = words[i * sub_len : (i + 1) * sub_len]
+            await layout.show_and_confirm_single_share(
+                sub_words, phrase_index=(i + 1, 3)
+            )
+    else:
+        await layout.show_backup_intro(single_share=True, num_of_words=word_count)
+        await layout.show_and_confirm_single_share(words)
 
 
 async def _backup_slip39_single(
@@ -313,8 +339,10 @@ def _validate_reset_device(msg: ResetDevice) -> None:
         if msg.strength not in (128, 256):
             raise ProcessError("Invalid strength (has to be 128 or 256 bits)")
     elif backup_type == BAK_T_BIP39:
-        if msg.strength not in (128, 192, 256):
-            raise ProcessError("Invalid strength (has to be 128, 192 or 256 bits)")
+        if msg.strength not in (128, 192, 256, 384, 576, 768):
+            raise ProcessError(
+                "Invalid strength (has to be 128, 192, 256, 384, 576 or 768 bits)"
+            )
     else:
         raise ProcessError("Backup type not implemented")
 
@@ -327,15 +355,27 @@ def _compute_secret_from_entropy(
 ) -> bytes:
     from trezor.crypto import hashlib
 
-    # combine internal and external entropy
-    ehash = hashlib.sha256()
-    ehash.update(int_entropy)
-    ehash.update(ext_entropy)
-    entropy = ehash.digest()
-    # take a required number of bytes
     strength = strength_bits // 8
-    secret = entropy[:strength]
-    return secret
+
+    if strength <= 32:
+        # Standard: single SHA-256 hash, truncated
+        ehash = hashlib.sha256()
+        ehash.update(int_entropy)
+        ehash.update(ext_entropy)
+        entropy = ehash.digest()
+        return entropy[:strength]
+    else:
+        # Extended (384/576/768 bits): domain-separated hashing
+        # produces 3 independent sub-secrets for 3 BIP-39 sub-phrases
+        sub_strength = strength // 3
+        parts = []
+        for i in range(3):
+            ehash = hashlib.sha256()
+            ehash.update(int_entropy)
+            ehash.update(ext_entropy)
+            ehash.update(bytes([i]))  # domain separator
+            parts.append(ehash.digest()[:sub_strength])
+        return b"".join(parts)
 
 
 async def backup_seed(backup_type: BackupType, mnemonic_secret: bytes) -> None:

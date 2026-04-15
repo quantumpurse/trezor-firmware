@@ -36,6 +36,11 @@
 
 static int bip39_cache_index = 0;
 
+// Cache buffer stays at 256 bytes — big enough for every standard BIP-39
+// mnemonic (24 words + spaces ≈ 216 bytes). Extended BIP-39 mnemonics
+// (36/54/72 words) exceed 256 chars; they simply skip the cache and re-run
+// PBKDF2 on each `bip39.seed()` call. Bumping the struct to ~650 bytes would
+// cost ~1.5 KB of RAM on every build (including bitcoin-only) for zero gain.
 static CONFIDENTIAL struct {
   bool set;
   char mnemonic[256];

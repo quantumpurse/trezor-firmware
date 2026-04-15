@@ -118,9 +118,43 @@ async def show_backup_success() -> None:
 # ===
 
 
-async def show_and_confirm_single_share(words: Sequence[str]) -> None:
-    # warn user about mnemonic safety
-    await show_backup_warning()
+async def show_and_confirm_single_share(
+    words: Sequence[str],
+    phrase_index: tuple[int, int] | None = None,
+) -> None:
+    """Display + confirm a BIP-39/SLIP-39 single share.
+
+    For extended BIP-39 mnemonics (36/54/72 words = 3 sub-phrases),
+    pass `phrase_index=(current, total)` to show a "Phrase X of N" intro
+    so the user knows they are backing up one part of a larger mnemonic.
+    Warning is only shown for the first phrase to avoid repetition.
+    """
+    from trezor.ui.layouts import confirm_action
+
+    if phrase_index is not None:
+        current, total = phrase_index
+        sub_len = len(words)
+        total_words = total * sub_len
+
+        # Intro screen for this sub-phrase: gives clear context
+        title = "Backup phrase {} of {}".format(current, total)
+        description = (
+            "This is part {} of {} of your {}-word recovery phrase. "
+            "Write down the next {} words."
+        ).format(current, total, total_words, sub_len)
+
+        await confirm_action(
+            "extended_phrase_intro",
+            title,
+            description=description,
+            verb="Continue",
+        )
+
+        # Show safety warning only on the first phrase
+        if current == 1:
+            await show_backup_warning()
+    else:
+        await show_backup_warning()
 
     while True:
         # display paginated mnemonic on the screen

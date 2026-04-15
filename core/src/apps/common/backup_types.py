@@ -5,7 +5,7 @@ from trezor.enums import BackupType
 if TYPE_CHECKING:
     from trezor.crypto.slip39 import Share
 
-_BIP39_WORD_COUNTS = (12, 18, 24)
+_BIP39_WORD_COUNTS = (12, 18, 24, 36, 54, 72)
 _SLIP39_WORD_COUNTS = (20, 33)
 
 
@@ -82,5 +82,11 @@ def get_num_of_words_per_share(
             return 18
         elif secret_length_bytes == 32:
             return 24
+        elif secret_length_bytes == 48:
+            return 36
+        elif secret_length_bytes == 72:
+            return 54
+        elif secret_length_bytes == 96:
+            return 72
     # Invalid backup type and secret length combination
     raise RuntimeError

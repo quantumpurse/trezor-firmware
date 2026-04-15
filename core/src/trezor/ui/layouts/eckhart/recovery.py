@@ -36,7 +36,16 @@ async def request_word(
     send_button_request: bool,
     prefill_word: str = "",
 ) -> str:
-    prompt = TR.recovery__word_x_of_y_template.format(word_index + 1, word_count)
+    if word_count in (36, 54, 72):
+        # Extended mnemonic: show phrase group context
+        sub_len = word_count // 3
+        phrase_num = (word_index // sub_len) + 1
+        sub_index = (word_index % sub_len) + 1
+        prompt = "Phrase {}\nWord {} of {}".format(phrase_num, sub_index, sub_len)
+    else:
+        prompt = TR.recovery__word_x_of_y_template.format(
+            word_index + 1, word_count
+        )
     if is_slip39:
         keyboard = trezorui_api.request_slip39(
             prompt=prompt, prefill_word=prefill_word, can_go_back=True
