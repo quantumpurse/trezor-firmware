@@ -372,6 +372,15 @@ enum MessageType {
     MessageType_TronWithdrawUnfreeze = 2209 [(wire_in) = true];
     MessageType_TronVoteWitnessContract = 2210 [(wire_in) = true];
 
+    // CKB
+    MessageType_CKBGetAddress = 5500 [(wire_in) = true];
+    MessageType_CKBAddress = 5501 [(wire_out) = true];
+    MessageType_CKBSignTx = 5502 [(wire_in) = true];
+    MessageType_CKBTxRequest = 5503 [(wire_out) = true];
+    MessageType_CKBTxAckInput = 5504 [(wire_in) = true];
+    MessageType_CKBTxAckOutput = 5505 [(wire_in) = true];
+    MessageType_CKBTxAckCellDep = 5506 [(wire_in) = true];
+
     // Benchmark
     MessageType_BenchmarkListNames = 9100 [(bitcoin_only) = true];
     MessageType_BenchmarkNames = 9101 [(bitcoin_only) = true];

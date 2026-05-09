@@ -236,6 +236,12 @@ def _find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.SolanaSignTx:
             return "apps.solana.sign_tx"
 
+        # ckb
+        if msg_type == MessageType.CKBGetAddress:
+            return "apps.ckb.get_address"
+        if msg_type == MessageType.CKBSignTx:
+            return "apps.ckb.sign_tx"
+
     raise ValueError
 
 

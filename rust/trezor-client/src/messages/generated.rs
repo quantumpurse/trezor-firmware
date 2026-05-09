@@ -164,6 +164,17 @@ trezor_message_impl! {
     CardanoMessageSignature => MessageType_CardanoMessageSignature,
 }
 
+#[cfg(feature = "ckb")]
+trezor_message_impl! {
+    CKBGetAddress => MessageType_CKBGetAddress,
+    CKBAddress => MessageType_CKBAddress,
+    CKBSignTx => MessageType_CKBSignTx,
+    CKBTxRequest => MessageType_CKBTxRequest,
+    CKBTxAckInput => MessageType_CKBTxAckInput,
+    CKBTxAckOutput => MessageType_CKBTxAckOutput,
+    CKBTxAckCellDep => MessageType_CKBTxAckCellDep,
+}
+
 #[cfg(feature = "eos")]
 trezor_message_impl! {
     EosGetPublicKey => MessageType_EosGetPublicKey,
