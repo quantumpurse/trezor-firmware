@@ -245,6 +245,14 @@ def _find_message_handler_module(msg_type: int) -> str:
             return "apps.ckb.sign_message"
         if msg_type == MessageType.CKBVerifyMessage:
             return "apps.ckb.verify_message"
+        if msg_type == MessageType.CKBSphincsPlusGetAddress:
+            return "apps.ckb.get_sphincs_address"
+        if msg_type == MessageType.CKBSphincsPlusSignTx:
+            return "apps.ckb.sign_sphincs_tx"
+        if msg_type == MessageType.CKBSphincsPlusSignMessage:
+            return "apps.ckb.sign_sphincs_message"
+        if msg_type == MessageType.CKBSphincsPlusVerifyMessage:
+            return "apps.ckb.verify_sphincs_message"
 
     raise ValueError
 
