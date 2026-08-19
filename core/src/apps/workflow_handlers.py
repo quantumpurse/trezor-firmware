@@ -236,6 +236,17 @@ def _find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.SolanaSignTx:
             return "apps.solana.sign_tx"
 
+        # ckb (frozen into T3W1 builds only, see SConscript)
+        if utils.INTERNAL_MODEL == "T3W1":
+            if msg_type == MessageType.CKBGetAddress:
+                return "apps.ckb.get_address"
+            if msg_type == MessageType.CKBSignTx:
+                return "apps.ckb.sign_tx"
+            if msg_type == MessageType.CKBSignMessage:
+                return "apps.ckb.sign_message"
+            if msg_type == MessageType.CKBVerifyMessage:
+                return "apps.ckb.verify_message"
+
     raise ValueError
 
 

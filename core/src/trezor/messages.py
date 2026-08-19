@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from trezor.enums import BackupType  # noqa: F401
     from trezor.enums import BootCommand  # noqa: F401
     from trezor.enums import ButtonRequestType  # noqa: F401
+    from trezor.enums import CKBTxRequestType  # noqa: F401
     from trezor.enums import Capability  # noqa: F401
     from trezor.enums import CardanoAddressType  # noqa: F401
     from trezor.enums import CardanoCVoteRegistrationFormat  # noqa: F401
@@ -1866,6 +1867,394 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["CardanoMessageSignature"]:
+            return isinstance(msg, cls)
+
+    class CKBGetAddress(protobuf.MessageType):
+        address_n: "list[int]"
+        show_display: "bool | None"
+        network: "str"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            network: "str",
+            address_n: "list[int] | None" = None,
+            show_display: "bool | None" = None,
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBGetAddress"]:
+            return isinstance(msg, cls)
+
+    class CKBAddress(protobuf.MessageType):
+        address: "str"
+        mac: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+            mac: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBAddress"]:
+            return isinstance(msg, cls)
+
+    class CKBSignMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        message: "AnyBytes"
+        network: "str"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            message: "AnyBytes",
+            network: "str",
+            address_n: "list[int] | None" = None,
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBSignMessage"]:
+            return isinstance(msg, cls)
+
+    class CKBMessageSignature(protobuf.MessageType):
+        address: "str"
+        signature: "AnyBytes"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+            signature: "AnyBytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBMessageSignature"]:
+            return isinstance(msg, cls)
+
+    class CKBVerifyMessage(protobuf.MessageType):
+        address: "str"
+        signature: "AnyBytes"
+        message: "AnyBytes"
+        network: "str"
+        chunkify: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+            signature: "AnyBytes",
+            message: "AnyBytes",
+            network: "str",
+            chunkify: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBVerifyMessage"]:
+            return isinstance(msg, cls)
+
+    class CKBCellInput(protobuf.MessageType):
+        previous_output_tx_hash: "AnyBytes"
+        previous_output_index: "int"
+        since: "int"
+        dao_deposit_header_index: "int | None"
+        dao_withdraw_header_index: "int | None"
+
+        def __init__(
+            self,
+            *,
+            previous_output_tx_hash: "AnyBytes",
+            previous_output_index: "int",
+            since: "int | None" = None,
+            dao_deposit_header_index: "int | None" = None,
+            dao_withdraw_header_index: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBCellInput"]:
+            return isinstance(msg, cls)
+
+    class CKBCellOutput(protobuf.MessageType):
+        capacity: "int"
+        lock_code_hash: "AnyBytes"
+        lock_hash_type: "int"
+        lock_args: "AnyBytes"
+        type_code_hash: "AnyBytes | None"
+        type_hash_type: "int | None"
+        type_args: "AnyBytes | None"
+        data: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            capacity: "int",
+            lock_code_hash: "AnyBytes",
+            lock_hash_type: "int",
+            lock_args: "AnyBytes",
+            type_code_hash: "AnyBytes | None" = None,
+            type_hash_type: "int | None" = None,
+            type_args: "AnyBytes | None" = None,
+            data: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBCellOutput"]:
+            return isinstance(msg, cls)
+
+    class CKBCellDep(protobuf.MessageType):
+        tx_hash: "AnyBytes"
+        index: "int"
+        dep_type: "int"
+
+        def __init__(
+            self,
+            *,
+            tx_hash: "AnyBytes",
+            index: "int",
+            dep_type: "int",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBCellDep"]:
+            return isinstance(msg, cls)
+
+    class CKBSignTx(protobuf.MessageType):
+        address_n: "list[int]"
+        network: "str"
+        inputs_count: "int"
+        outputs_count: "int"
+        cell_deps_count: "int"
+        chunkify: "bool | None"
+        witnesses_count: "int | None"
+        sign_group_input_indices: "list[int]"
+        header_deps: "list[AnyBytes]"
+
+        def __init__(
+            self,
+            *,
+            network: "str",
+            inputs_count: "int",
+            outputs_count: "int",
+            address_n: "list[int] | None" = None,
+            sign_group_input_indices: "list[int] | None" = None,
+            header_deps: "list[AnyBytes] | None" = None,
+            cell_deps_count: "int | None" = None,
+            chunkify: "bool | None" = None,
+            witnesses_count: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBSignTx"]:
+            return isinstance(msg, cls)
+
+    class CKBTxRequest(protobuf.MessageType):
+        request_type: "CKBTxRequestType | None"
+        details: "CKBTxRequestDetails | None"
+        serialized: "CKBTxRequestSerialized | None"
+
+        def __init__(
+            self,
+            *,
+            request_type: "CKBTxRequestType | None" = None,
+            details: "CKBTxRequestDetails | None" = None,
+            serialized: "CKBTxRequestSerialized | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxRequest"]:
+            return isinstance(msg, cls)
+
+    class CKBTxRequestDetails(protobuf.MessageType):
+        request_index: "int | None"
+        tx_hash: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            request_index: "int | None" = None,
+            tx_hash: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxRequestDetails"]:
+            return isinstance(msg, cls)
+
+    class CKBTxRequestSerialized(protobuf.MessageType):
+        signature: "AnyBytes | None"
+        tx_hash: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            signature: "AnyBytes | None" = None,
+            tx_hash: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxRequestSerialized"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckInput(protobuf.MessageType):
+        input: "CKBCellInput"
+
+        def __init__(
+            self,
+            *,
+            input: "CKBCellInput",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckInput"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckOutput(protobuf.MessageType):
+        output: "CKBCellOutput"
+
+        def __init__(
+            self,
+            *,
+            output: "CKBCellOutput",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckOutput"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckCellDep(protobuf.MessageType):
+        cell_dep: "CKBCellDep"
+
+        def __init__(
+            self,
+            *,
+            cell_dep: "CKBCellDep",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckCellDep"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckPrevMeta(protobuf.MessageType):
+        version: "int"
+        inputs_count: "int"
+        outputs_count: "int"
+        cell_deps_count: "int"
+        header_deps: "list[AnyBytes]"
+
+        def __init__(
+            self,
+            *,
+            version: "int",
+            inputs_count: "int",
+            outputs_count: "int",
+            header_deps: "list[AnyBytes] | None" = None,
+            cell_deps_count: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckPrevMeta"]:
+            return isinstance(msg, cls)
+
+    class CKBBlockHeader(protobuf.MessageType):
+        version: "int"
+        compact_target: "int"
+        timestamp: "int"
+        number: "int"
+        epoch: "int"
+        parent_hash: "AnyBytes"
+        transactions_root: "AnyBytes"
+        proposals_hash: "AnyBytes"
+        extra_hash: "AnyBytes"
+        dao: "AnyBytes"
+        nonce: "AnyBytes"
+
+        def __init__(
+            self,
+            *,
+            version: "int",
+            compact_target: "int",
+            timestamp: "int",
+            number: "int",
+            epoch: "int",
+            parent_hash: "AnyBytes",
+            transactions_root: "AnyBytes",
+            proposals_hash: "AnyBytes",
+            extra_hash: "AnyBytes",
+            dao: "AnyBytes",
+            nonce: "AnyBytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBBlockHeader"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckHeader(protobuf.MessageType):
+        header: "CKBBlockHeader"
+
+        def __init__(
+            self,
+            *,
+            header: "CKBBlockHeader",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckHeader"]:
+            return isinstance(msg, cls)
+
+    class CKBWitnessArgs(protobuf.MessageType):
+        lock_size: "int"
+        input_type: "AnyBytes | None"
+        output_type: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            lock_size: "int | None" = None,
+            input_type: "AnyBytes | None" = None,
+            output_type: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBWitnessArgs"]:
+            return isinstance(msg, cls)
+
+    class CKBTxAckWitness(protobuf.MessageType):
+        witness_args: "CKBWitnessArgs | None"
+        raw: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            witness_args: "CKBWitnessArgs | None" = None,
+            raw: "AnyBytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["CKBTxAckWitness"]:
             return isinstance(msg, cls)
 
     class CipherKeyValue(protobuf.MessageType):

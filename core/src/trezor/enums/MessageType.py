@@ -294,3 +294,16 @@ if not utils.BITCOIN_ONLY:
     TronUnfreezeBalanceV2Contract = 2208
     TronWithdrawUnfreeze = 2209
     TronVoteWitnessContract = 2210
+    CKBGetAddress = 5500
+    CKBAddress = 5501
+    CKBSignTx = 5502
+    CKBTxRequest = 5503
+    CKBTxAckInput = 5504
+    CKBTxAckOutput = 5505
+    CKBTxAckCellDep = 5506
+    CKBSignMessage = 5507
+    CKBMessageSignature = 5508
+    CKBVerifyMessage = 5509
+    CKBTxAckWitness = 5510
+    CKBTxAckPrevMeta = 5511
+    CKBTxAckHeader = 5512
