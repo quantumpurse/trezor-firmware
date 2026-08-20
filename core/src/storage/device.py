@@ -195,8 +195,14 @@ if not utils.BITCOIN_ONLY:
         from trezor.enums import BackupType
 
         if get_backup_type() == BackupType.Bip39:
+            # mnemonic_to_bits takes at most 24 words. As with
+            # allow_derivation_fail below, setup succeeds and Cardano reports
+            # the secret missing when actually used.
+            if len(secret.split(b" ")) > 24:
+                return
+
             try:
-                binary_mnemonic = bip39.mnemonic_to_bits(secret.decode())
+                binary_mnemonic = bip39.mnemonic_to_bits(secret)
             except ValueError:
                 if __debug__ and allow_derivation_fail:
                     # There is a possibility to load device with mnemonics that cannot

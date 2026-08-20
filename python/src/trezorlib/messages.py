@@ -193,6 +193,20 @@ class CardanoTxWitnessType(IntEnum):
     SHELLEY_WITNESS = 1
 
 
+class CKBTxRequestType(IntEnum):
+    TXINPUT = 0
+    TXOUTPUT = 1
+    TXCELLDEP = 2
+    TXFINISHED = 3
+    TXWITNESS = 4
+    TXPREVMETA = 5
+    TXPREVINPUT = 6
+    TXPREVOUTPUT = 7
+    TXPREVCELLDEP = 8
+    TXHEADER = 9
+    TXSIGCHUNK = 10
+
+
 class BackupType(IntEnum):
     Bip39 = 0
     Slip39_Basic = 1
@@ -271,6 +285,7 @@ class Capability(IntEnum):
     Tron = 24
     N4W1 = 25
     TouchWakeup = 26
+    CKB = 28
 
 
 class SdProtectOperationType(IntEnum):
@@ -772,6 +787,26 @@ class MessageType(IntEnum):
     TronUnfreezeBalanceV2Contract = 2208
     TronWithdrawUnfreeze = 2209
     TronVoteWitnessContract = 2210
+    CKBGetAddress = 5500
+    CKBAddress = 5501
+    CKBSignTx = 5502
+    CKBTxRequest = 5503
+    CKBTxAckInput = 5504
+    CKBTxAckOutput = 5505
+    CKBTxAckCellDep = 5506
+    CKBSignMessage = 5507
+    CKBMessageSignature = 5508
+    CKBVerifyMessage = 5509
+    CKBTxAckWitness = 5510
+    CKBTxAckPrevMeta = 5511
+    CKBTxAckHeader = 5512
+    CKBSphincsPlusGetAddress = 5520
+    CKBSphincsPlusAddress = 5521
+    CKBSphincsPlusSignTx = 5522
+    CKBTxAckSigChunk = 5523
+    CKBSphincsPlusSignMessage = 5524
+    CKBSphincsPlusMessageSignature = 5525
+    CKBSphincsPlusVerifyMessage = 5526
     BenchmarkListNames = 9100
     BenchmarkNames = 9101
     BenchmarkRun = 9102
@@ -3086,6 +3121,636 @@ class CardanoMessageSignature(protobuf.MessageType):
         self.signature = signature
         self.address = address
         self.pub_key = pub_key
+
+
+class CKBGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5500
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False, default=None),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False, default=None),
+        3: protobuf.Field("network", "string", repeated=False, required=True),
+        4: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        network: "str",
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.network = network
+        self.show_display = show_display
+        self.chunkify = chunkify
+
+
+class CKBAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5501
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("mac", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        mac: Optional["bytes"] = None,
+    ) -> None:
+        self.address = address
+        self.mac = mac
+
+
+class CKBSphincsPlusGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5520
+    FIELDS = {
+        1: protobuf.Field("account_index", "uint32", repeated=False, required=False, default=0),
+        2: protobuf.Field("variant", "uint32", repeated=False, required=False, default=49),
+        3: protobuf.Field("network", "string", repeated=False, required=True),
+        4: protobuf.Field("show_display", "bool", repeated=False, required=False, default=None),
+        5: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        network: "str",
+        account_index: Optional["int"] = 0,
+        variant: Optional["int"] = 49,
+        show_display: Optional["bool"] = None,
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.network = network
+        self.account_index = account_index
+        self.variant = variant
+        self.show_display = show_display
+        self.chunkify = chunkify
+
+
+class CKBSphincsPlusAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5521
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("lock_args", "bytes", repeated=False, required=True),
+        3: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        4: protobuf.Field("variant", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        lock_args: "bytes",
+        public_key: "bytes",
+        variant: "int",
+    ) -> None:
+        self.address = address
+        self.lock_args = lock_args
+        self.public_key = public_key
+        self.variant = variant
+
+
+class CKBSphincsPlusSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5522
+    FIELDS = {
+        1: protobuf.Field("account_index", "uint32", repeated=False, required=False, default=0),
+        2: protobuf.Field("variant", "uint32", repeated=False, required=False, default=49),
+        3: protobuf.Field("network", "string", repeated=False, required=True),
+        4: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
+        5: protobuf.Field("outputs_count", "uint32", repeated=False, required=True),
+        6: protobuf.Field("cell_deps_count", "uint32", repeated=False, required=False, default=0),
+        7: protobuf.Field("witnesses_count", "uint32", repeated=False, required=False, default=None),
+        8: protobuf.Field("sign_group_input_indices", "uint32", repeated=True, required=False, default=None),
+        9: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+        10: protobuf.Field("header_deps", "bytes", repeated=True, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        network: "str",
+        inputs_count: "int",
+        outputs_count: "int",
+        sign_group_input_indices: Optional[Sequence["int"]] = None,
+        header_deps: Optional[Sequence["bytes"]] = None,
+        account_index: Optional["int"] = 0,
+        variant: Optional["int"] = 49,
+        cell_deps_count: Optional["int"] = 0,
+        witnesses_count: Optional["int"] = None,
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.sign_group_input_indices: Sequence["int"] = sign_group_input_indices if sign_group_input_indices is not None else []
+        self.header_deps: Sequence["bytes"] = header_deps if header_deps is not None else []
+        self.network = network
+        self.inputs_count = inputs_count
+        self.outputs_count = outputs_count
+        self.account_index = account_index
+        self.variant = variant
+        self.cell_deps_count = cell_deps_count
+        self.witnesses_count = witnesses_count
+        self.chunkify = chunkify
+
+
+class CKBSphincsPlusSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5524
+    FIELDS = {
+        1: protobuf.Field("account_index", "uint32", repeated=False, required=False, default=0),
+        2: protobuf.Field("variant", "uint32", repeated=False, required=False, default=49),
+        3: protobuf.Field("message", "bytes", repeated=False, required=True),
+        4: protobuf.Field("network", "string", repeated=False, required=True),
+        5: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        message: "bytes",
+        network: "str",
+        account_index: Optional["int"] = 0,
+        variant: Optional["int"] = 49,
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.message = message
+        self.network = network
+        self.account_index = account_index
+        self.variant = variant
+        self.chunkify = chunkify
+
+
+class CKBSphincsPlusMessageSignature(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5525
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        3: protobuf.Field("variant", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        public_key: "bytes",
+        variant: "int",
+    ) -> None:
+        self.address = address
+        self.public_key = public_key
+        self.variant = variant
+
+
+class CKBSphincsPlusVerifyMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5526
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        3: protobuf.Field("message", "bytes", repeated=False, required=True),
+        4: protobuf.Field("variant", "uint32", repeated=False, required=True),
+        5: protobuf.Field("network", "string", repeated=False, required=True),
+        6: protobuf.Field("signature_total_size", "uint32", repeated=False, required=True),
+        7: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        public_key: "bytes",
+        message: "bytes",
+        variant: "int",
+        network: "str",
+        signature_total_size: "int",
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.address = address
+        self.public_key = public_key
+        self.message = message
+        self.variant = variant
+        self.network = network
+        self.signature_total_size = signature_total_size
+        self.chunkify = chunkify
+
+
+class CKBSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5507
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False, default=None),
+        2: protobuf.Field("message", "bytes", repeated=False, required=True),
+        3: protobuf.Field("network", "string", repeated=False, required=True),
+        4: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        message: "bytes",
+        network: "str",
+        address_n: Optional[Sequence["int"]] = None,
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.message = message
+        self.network = network
+        self.chunkify = chunkify
+
+
+class CKBMessageSignature(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5508
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        signature: "bytes",
+    ) -> None:
+        self.address = address
+        self.signature = signature
+
+
+class CKBVerifyMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5509
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+        3: protobuf.Field("message", "bytes", repeated=False, required=True),
+        4: protobuf.Field("network", "string", repeated=False, required=True),
+        5: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+        signature: "bytes",
+        message: "bytes",
+        network: "str",
+        chunkify: Optional["bool"] = None,
+    ) -> None:
+        self.address = address
+        self.signature = signature
+        self.message = message
+        self.network = network
+        self.chunkify = chunkify
+
+
+class CKBCellInput(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("previous_output_tx_hash", "bytes", repeated=False, required=True),
+        2: protobuf.Field("previous_output_index", "uint32", repeated=False, required=True),
+        3: protobuf.Field("since", "uint64", repeated=False, required=False, default=0),
+        4: protobuf.Field("dao_deposit_header_index", "uint32", repeated=False, required=False, default=None),
+        5: protobuf.Field("dao_withdraw_header_index", "uint32", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        previous_output_tx_hash: "bytes",
+        previous_output_index: "int",
+        since: Optional["int"] = 0,
+        dao_deposit_header_index: Optional["int"] = None,
+        dao_withdraw_header_index: Optional["int"] = None,
+    ) -> None:
+        self.previous_output_tx_hash = previous_output_tx_hash
+        self.previous_output_index = previous_output_index
+        self.since = since
+        self.dao_deposit_header_index = dao_deposit_header_index
+        self.dao_withdraw_header_index = dao_withdraw_header_index
+
+
+class CKBCellOutput(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("capacity", "uint64", repeated=False, required=True),
+        2: protobuf.Field("lock_code_hash", "bytes", repeated=False, required=True),
+        3: protobuf.Field("lock_hash_type", "uint32", repeated=False, required=True),
+        4: protobuf.Field("lock_args", "bytes", repeated=False, required=True),
+        5: protobuf.Field("type_code_hash", "bytes", repeated=False, required=False, default=None),
+        6: protobuf.Field("type_hash_type", "uint32", repeated=False, required=False, default=None),
+        7: protobuf.Field("type_args", "bytes", repeated=False, required=False, default=None),
+        8: protobuf.Field("data", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        capacity: "int",
+        lock_code_hash: "bytes",
+        lock_hash_type: "int",
+        lock_args: "bytes",
+        type_code_hash: Optional["bytes"] = None,
+        type_hash_type: Optional["int"] = None,
+        type_args: Optional["bytes"] = None,
+        data: Optional["bytes"] = None,
+    ) -> None:
+        self.capacity = capacity
+        self.lock_code_hash = lock_code_hash
+        self.lock_hash_type = lock_hash_type
+        self.lock_args = lock_args
+        self.type_code_hash = type_code_hash
+        self.type_hash_type = type_hash_type
+        self.type_args = type_args
+        self.data = data
+
+
+class CKBCellDep(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("tx_hash", "bytes", repeated=False, required=True),
+        2: protobuf.Field("index", "uint32", repeated=False, required=True),
+        3: protobuf.Field("dep_type", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        tx_hash: "bytes",
+        index: "int",
+        dep_type: "int",
+    ) -> None:
+        self.tx_hash = tx_hash
+        self.index = index
+        self.dep_type = dep_type
+
+
+class CKBSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5502
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False, default=None),
+        2: protobuf.Field("network", "string", repeated=False, required=True),
+        3: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
+        4: protobuf.Field("outputs_count", "uint32", repeated=False, required=True),
+        5: protobuf.Field("cell_deps_count", "uint32", repeated=False, required=False, default=0),
+        6: protobuf.Field("chunkify", "bool", repeated=False, required=False, default=None),
+        7: protobuf.Field("witnesses_count", "uint32", repeated=False, required=False, default=None),
+        8: protobuf.Field("sign_group_input_indices", "uint32", repeated=True, required=False, default=None),
+        9: protobuf.Field("header_deps", "bytes", repeated=True, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        network: "str",
+        inputs_count: "int",
+        outputs_count: "int",
+        address_n: Optional[Sequence["int"]] = None,
+        sign_group_input_indices: Optional[Sequence["int"]] = None,
+        header_deps: Optional[Sequence["bytes"]] = None,
+        cell_deps_count: Optional["int"] = 0,
+        chunkify: Optional["bool"] = None,
+        witnesses_count: Optional["int"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.sign_group_input_indices: Sequence["int"] = sign_group_input_indices if sign_group_input_indices is not None else []
+        self.header_deps: Sequence["bytes"] = header_deps if header_deps is not None else []
+        self.network = network
+        self.inputs_count = inputs_count
+        self.outputs_count = outputs_count
+        self.cell_deps_count = cell_deps_count
+        self.chunkify = chunkify
+        self.witnesses_count = witnesses_count
+
+
+class CKBTxRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5503
+    FIELDS = {
+        1: protobuf.Field("request_type", "CKBTxRequestType", repeated=False, required=False, default=None),
+        2: protobuf.Field("details", "CKBTxRequestDetails", repeated=False, required=False, default=None),
+        3: protobuf.Field("serialized", "CKBTxRequestSerialized", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        request_type: Optional["CKBTxRequestType"] = None,
+        details: Optional["CKBTxRequestDetails"] = None,
+        serialized: Optional["CKBTxRequestSerialized"] = None,
+    ) -> None:
+        self.request_type = request_type
+        self.details = details
+        self.serialized = serialized
+
+
+class CKBTxRequestDetails(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("request_index", "uint32", repeated=False, required=False, default=None),
+        2: protobuf.Field("tx_hash", "bytes", repeated=False, required=False, default=None),
+        3: protobuf.Field("signature_offset", "uint32", repeated=False, required=False, default=None),
+        4: protobuf.Field("signature_total_size", "uint32", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        request_index: Optional["int"] = None,
+        tx_hash: Optional["bytes"] = None,
+        signature_offset: Optional["int"] = None,
+        signature_total_size: Optional["int"] = None,
+    ) -> None:
+        self.request_index = request_index
+        self.tx_hash = tx_hash
+        self.signature_offset = signature_offset
+        self.signature_total_size = signature_total_size
+
+
+class CKBTxRequestSerialized(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False, default=None),
+        2: protobuf.Field("tx_hash", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+        tx_hash: Optional["bytes"] = None,
+    ) -> None:
+        self.signature = signature
+        self.tx_hash = tx_hash
+
+
+class CKBTxAckInput(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5504
+    FIELDS = {
+        1: protobuf.Field("input", "CKBCellInput", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        input: "CKBCellInput",
+    ) -> None:
+        self.input = input
+
+
+class CKBTxAckOutput(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5505
+    FIELDS = {
+        1: protobuf.Field("output", "CKBCellOutput", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        output: "CKBCellOutput",
+    ) -> None:
+        self.output = output
+
+
+class CKBTxAckCellDep(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5506
+    FIELDS = {
+        1: protobuf.Field("cell_dep", "CKBCellDep", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        cell_dep: "CKBCellDep",
+    ) -> None:
+        self.cell_dep = cell_dep
+
+
+class CKBTxAckPrevMeta(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5511
+    FIELDS = {
+        1: protobuf.Field("version", "uint32", repeated=False, required=True),
+        2: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
+        3: protobuf.Field("outputs_count", "uint32", repeated=False, required=True),
+        4: protobuf.Field("cell_deps_count", "uint32", repeated=False, required=False, default=0),
+        5: protobuf.Field("header_deps", "bytes", repeated=True, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        version: "int",
+        inputs_count: "int",
+        outputs_count: "int",
+        header_deps: Optional[Sequence["bytes"]] = None,
+        cell_deps_count: Optional["int"] = 0,
+    ) -> None:
+        self.header_deps: Sequence["bytes"] = header_deps if header_deps is not None else []
+        self.version = version
+        self.inputs_count = inputs_count
+        self.outputs_count = outputs_count
+        self.cell_deps_count = cell_deps_count
+
+
+class CKBBlockHeader(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("version", "uint32", repeated=False, required=True),
+        2: protobuf.Field("compact_target", "uint32", repeated=False, required=True),
+        3: protobuf.Field("timestamp", "uint64", repeated=False, required=True),
+        4: protobuf.Field("number", "uint64", repeated=False, required=True),
+        5: protobuf.Field("epoch", "uint64", repeated=False, required=True),
+        6: protobuf.Field("parent_hash", "bytes", repeated=False, required=True),
+        7: protobuf.Field("transactions_root", "bytes", repeated=False, required=True),
+        8: protobuf.Field("proposals_hash", "bytes", repeated=False, required=True),
+        9: protobuf.Field("extra_hash", "bytes", repeated=False, required=True),
+        10: protobuf.Field("dao", "bytes", repeated=False, required=True),
+        11: protobuf.Field("nonce", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        version: "int",
+        compact_target: "int",
+        timestamp: "int",
+        number: "int",
+        epoch: "int",
+        parent_hash: "bytes",
+        transactions_root: "bytes",
+        proposals_hash: "bytes",
+        extra_hash: "bytes",
+        dao: "bytes",
+        nonce: "bytes",
+    ) -> None:
+        self.version = version
+        self.compact_target = compact_target
+        self.timestamp = timestamp
+        self.number = number
+        self.epoch = epoch
+        self.parent_hash = parent_hash
+        self.transactions_root = transactions_root
+        self.proposals_hash = proposals_hash
+        self.extra_hash = extra_hash
+        self.dao = dao
+        self.nonce = nonce
+
+
+class CKBTxAckHeader(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5512
+    FIELDS = {
+        1: protobuf.Field("header", "CKBBlockHeader", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        header: "CKBBlockHeader",
+    ) -> None:
+        self.header = header
+
+
+class CKBWitnessArgs(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("lock_size", "uint32", repeated=False, required=False, default=65),
+        2: protobuf.Field("input_type", "bytes", repeated=False, required=False, default=None),
+        3: protobuf.Field("output_type", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        lock_size: Optional["int"] = 65,
+        input_type: Optional["bytes"] = None,
+        output_type: Optional["bytes"] = None,
+    ) -> None:
+        self.lock_size = lock_size
+        self.input_type = input_type
+        self.output_type = output_type
+
+
+class CKBTxAckWitness(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5510
+    FIELDS = {
+        1: protobuf.Field("witness_args", "CKBWitnessArgs", repeated=False, required=False, default=None),
+        2: protobuf.Field("raw", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        witness_args: Optional["CKBWitnessArgs"] = None,
+        raw: Optional["bytes"] = None,
+    ) -> None:
+        self.witness_args = witness_args
+        self.raw = raw
+
+
+class CKBTxAckSigChunk(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 5523
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+    ) -> None:
+        self.signature = signature
 
 
 class CipherKeyValue(protobuf.MessageType):

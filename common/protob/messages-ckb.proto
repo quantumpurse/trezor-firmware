@@ -1,0 +1,407 @@
+syntax = "proto2";
+package hw.trezor.messages.ckb;
+
+// Sugar for easier handling in Java
+option java_package = "com.satoshilabs.trezor.lib.protobuf";
+option java_outer_classname = "TrezorMessageCKB";
+
+/**
+ * Request: Get CKB (Nervos Network) address for specified BIP-32 path
+ * @start
+ * @next CKBAddress
+ * @next Failure
+ */
+message CKBGetAddress {
+    repeated uint32 address_n = 1;   // BIP-32 path to derive the key from master node (e.g., m/44'/309'/0'/0/0)
+    optional bool show_display = 2;  // optionally show on display before sending the result
+    required string network = 3;     // "Mainnet" or "Testnet"
+    optional bool chunkify = 4;      // display the address in chunks of 4 characters
+}
+
+/**
+ * Response: CKB address encoded as Bech32m
+ * @end
+ */
+message CKBAddress {
+    required string address = 1;  // Bech32m encoded CKB address (ckb1... or ckt1...)
+    optional bytes mac = 2;       // authentication code for the address
+}
+
+// ============================================================
+// SPHINCS+ Post-Quantum Messages
+// ============================================================
+//
+// The SPHINCS+ keypair is derived from the device mnemonic with HKDF-SHA256
+// and combined with the CKB all-in-one quantum-resistant lock script. Both
+// signing flows reuse the same streaming protocol as CKBSignTx (TXINPUT/
+// TXOUTPUT/TXCELLDEP/TXWITNESS plus the TXPREV* previous-tx capacity check) and
+// the same trustless fee computation, differing only in the signing message
+// (ckb_tx_message_all) and the key/algorithm. SPHINCS+ signatures reach ~50 KB,
+// so they are streamed in fixed-size chunks via TXSIGCHUNK / CKBTxAckSigChunk.
+
+/**
+ * Request: Get a CKB SPHINCS+ post-quantum address.
+ *
+ * Requires the device to be initialized with an extended BIP-39 mnemonic
+ * (36/54/72 words) matching the requested variant's security level.
+ * @start
+ * @next CKBSphincsPlusAddress
+ * @next Failure
+ */
+message CKBSphincsPlusGetAddress {
+    optional uint32 account_index = 1 [default = 0];  // account index fed into the HKDF info string
+    optional uint32 variant = 2 [default = 49];       // SPHINCS+ variant ID (48..=59). Default 49 = SLH-DSA-SHA2-128s
+    required string network = 3;                      // "Mainnet" or "Testnet"
+    optional bool show_display = 4;                   // optionally show on display before sending
+    optional bool chunkify = 5;                       // display the address in chunks of 4 characters
+}
+
+/**
+ * Response: CKB SPHINCS+ address encoded as Bech32m
+ * @end
+ */
+message CKBSphincsPlusAddress {
+    required string address = 1;    // Bech32m encoded CKB address
+    required bytes lock_args = 2;   // 32-byte Blake2b lock script args
+    required bytes public_key = 3;  // SPHINCS+ public key bytes
+    required uint32 variant = 4;    // SPHINCS+ variant ID used
+}
+
+/**
+ * Request: Sign a CKB transaction with a SPHINCS+ post-quantum signature.
+ *
+ * Streams and verifies the transaction exactly like CKBSignTx (including the
+ * trustless previous-tx capacity check and witness streaming); the resulting
+ * signature is returned through the TXSIGCHUNK chunk stream.
+ * @start
+ * @next CKBTxRequest
+ * @next Failure
+ */
+message CKBSphincsPlusSignTx {
+    optional uint32 account_index = 1 [default = 0];    // account index fed into the HKDF info string
+    optional uint32 variant = 2 [default = 49];         // SPHINCS+ variant ID (48..=59)
+    required string network = 3;                        // "Mainnet" or "Testnet"
+    required uint32 inputs_count = 4;                   // number of cell inputs
+    required uint32 outputs_count = 5;                  // number of cell outputs
+    optional uint32 cell_deps_count = 6 [default = 0];  // number of cell dependencies
+    optional uint32 witnesses_count = 7;                // length of the on-chain witness vector (required)
+    repeated uint32 sign_group_input_indices = 8;       // input indices of the lock-script group to sign (sorted)
+    optional bool chunkify = 9;                         // display addresses in chunks
+    repeated bytes header_deps =
+        10;  // 32-byte block-header hashes committed in the tx hash (e.g. Nervos DAO); empty for plain transfers
+}
+
+/**
+ * Request: Sign a message with a SPHINCS+ post-quantum key.
+ *
+ * The signature is returned through the TXSIGCHUNK chunk stream, terminated by
+ * a CKBSphincsPlusMessageSignature carrying the address and public key.
+ * @start
+ * @next CKBTxRequest
+ * @next CKBSphincsPlusMessageSignature
+ * @next Failure
+ */
+message CKBSphincsPlusSignMessage {
+    optional uint32 account_index = 1 [default = 0];  // account index fed into the HKDF info string
+    optional uint32 variant = 2 [default = 49];       // SPHINCS+ variant ID (48..=59)
+    required bytes message = 3;                       // message to be signed
+    required string network = 4;                      // "Mainnet" or "Testnet"
+    optional bool chunkify = 5;                       // display the address in chunks of 4 characters
+}
+
+/**
+ * Response: terminates a SPHINCS+ message-signing flow. The signature itself
+ * was already delivered through the TXSIGCHUNK chunk stream.
+ * @end
+ */
+message CKBSphincsPlusMessageSignature {
+    required string address = 1;    // address used to sign the message
+    required bytes public_key = 2;  // SPHINCS+ public key bytes
+    required uint32 variant = 3;    // SPHINCS+ variant ID used
+}
+
+/**
+ * Request: Verify a SPHINCS+ message signature on the device.
+ *
+ * The signature to verify is streamed from the host in chunks: the device
+ * issues CKBTxRequest{TXSIGCHUNK} requests answered by CKBTxAckSigChunk.
+ * @start
+ * @next CKBTxRequest
+ * @next Success
+ * @next Failure
+ */
+message CKBSphincsPlusVerifyMessage {
+    required string address = 1;               // address to verify against
+    required bytes public_key = 2;             // SPHINCS+ public key (verify needs the full key)
+    required bytes message = 3;                // message to verify
+    required uint32 variant = 4;               // SPHINCS+ variant ID
+    required string network = 5;               // "Mainnet" or "Testnet"
+    required uint32 signature_total_size = 6;  // total length of the signature streamed via TXSIGCHUNK
+    optional bool chunkify = 7;                // display the address in chunks of 4 characters
+}
+
+// ============================================================
+// Message Signing/Verification
+// ============================================================
+
+/**
+ * Request: Ask device to sign message
+ * @start
+ * @next CKBMessageSignature
+ * @next Failure
+ */
+message CKBSignMessage {
+    repeated uint32 address_n = 1;  // BIP-32 path to derive the key from master node
+    required bytes message = 2;     // message to be signed
+    required string network = 3;    // "Mainnet" or "Testnet"
+    optional bool chunkify = 4;     // display the address in chunks of 4 characters
+}
+
+/**
+ * Response: Signed message
+ * @end
+ */
+message CKBMessageSignature {
+    required string address = 1;   // address used to sign the message
+    required bytes signature = 2;  // 65-byte recoverable secp256k1 signature
+}
+
+/**
+ * Request: Ask device to verify message
+ * @start
+ * @next Success
+ * @next Failure
+ */
+message CKBVerifyMessage {
+    required string address = 1;   // address to verify
+    required bytes signature = 2;  // signature to verify
+    required bytes message = 3;    // message to verify
+    required string network = 4;   // "Mainnet" or "Testnet"
+    optional bool chunkify = 5;    // display the address in chunks of 4 characters
+}
+
+// ============================================================
+// Transaction Signing Messages
+// ============================================================
+
+/**
+ * CKB Cell Input - reference to a cell to spend
+ * @embed
+ */
+message CKBCellInput {
+    required bytes previous_output_tx_hash = 1;  // 32-byte transaction hash
+    required uint32 previous_output_index = 2;   // output index in that transaction
+    optional uint64 since = 3 [default = 0];     // since field for time-lock
+    // Nervos DAO withdraw (phase 2) inputs only: indices into the top-level
+    // header_deps of the deposit block header and of the withdrawing cell's
+    // including (withdraw phase 1) block header. When both are set and the spent
+    // cell is a Nervos DAO withdrawing cell, the device verifies both headers
+    // against header_deps and credits the DAO compensation to this input.
+    optional uint32 dao_deposit_header_index = 4;
+    optional uint32 dao_withdraw_header_index = 5;
+}
+
+/**
+ * CKB Cell Output - new cell to create
+ * @embed
+ */
+message CKBCellOutput {
+    required uint64 capacity = 1;        // capacity in shannons (1 CKB = 10^8 shannons)
+    required bytes lock_code_hash = 2;   // 32-byte lock script code hash
+    required uint32 lock_hash_type = 3;  // 0=data, 1=type, 2=data1, 4=data2
+    required bytes lock_args = 4;        // lock script args (usually 20-byte blake160)
+    optional bytes type_code_hash = 5;   // 32-byte type script code hash (optional)
+    optional uint32 type_hash_type = 6;  // type script hash type
+    optional bytes type_args = 7;        // type script args
+    optional bytes data = 8;             // output data
+}
+
+/**
+ * CKB Cell Dependency - reference to deployed code/data
+ * @embed
+ */
+message CKBCellDep {
+    required bytes tx_hash = 1;    // 32-byte transaction hash
+    required uint32 index = 2;     // output index
+    required uint32 dep_type = 3;  // 0=code, 1=dep_group
+}
+
+/**
+ * Request: Sign CKB transaction
+ * @start
+ * @next CKBTxRequest
+ * @next Failure
+ */
+message CKBSignTx {
+    repeated uint32 address_n = 1;                      // BIP-32 path for signing key
+    required string network = 2;                        // Mainnet or Testnet
+    required uint32 inputs_count = 3;                   // number of cell inputs
+    required uint32 outputs_count = 4;                  // number of cell outputs
+    optional uint32 cell_deps_count = 5 [default = 0];  // number of cell dependencies
+    optional bool chunkify = 6;                         // display addresses in chunks
+    optional uint32 witnesses_count =
+        7;  // length of the on-chain witness vector; required, the device rejects the request if absent
+    repeated uint32 sign_group_input_indices =
+        8;  // input indices forming the lock-script group to sign (required, sorted; first index holds the signature)
+    repeated bytes header_deps =
+        9;  // 32-byte block-header hashes committed in the tx hash (e.g. Nervos DAO); empty for plain transfers
+}
+
+/**
+ * Request: Device asks for transaction data
+ * @next CKBTxAckInput
+ * @next CKBTxAckOutput
+ * @next CKBTxAckCellDep
+ */
+message CKBTxRequest {
+    optional CKBTxRequestType request_type = 1;
+    optional CKBTxRequestDetails details = 2;
+    optional CKBTxRequestSerialized serialized = 3;
+}
+
+/**
+ * Type of transaction data requested.
+ * The TXPREV* variants stream a previous transaction so the device can recompute
+ * its hash, match it against an input OutPoint, and read the spent capacity.
+ */
+enum CKBTxRequestType {
+    TXINPUT = 0;
+    TXOUTPUT = 1;
+    TXCELLDEP = 2;
+    TXFINISHED = 3;
+    TXWITNESS = 4;
+    TXPREVMETA = 5;     // previous-tx header: version, item counts, header_deps
+    TXPREVINPUT = 6;    // previous-tx input, answered with CKBTxAckInput
+    TXPREVOUTPUT = 7;   // previous-tx output, answered with CKBTxAckOutput (carries data)
+    TXPREVCELLDEP = 8;  // previous-tx cell dep, answered with CKBTxAckCellDep
+    TXHEADER = 9;       // full block header for header_deps[request_index], answered with CKBTxAckHeader
+    // SPHINCS+ signature chunk transfer (both directions), answered with
+    // CKBTxAckSigChunk. When signing, the device sends each chunk in
+    // `serialized.signature`; when verifying, the host returns it in
+    // CKBTxAckSigChunk.signature. `details.signature_offset` /
+    // `signature_total_size` locate the chunk inside the full signature.
+    TXSIGCHUNK = 10;
+}
+
+/**
+ * Details about the requested item
+ * @embed
+ */
+message CKBTxRequestDetails {
+    optional uint32 request_index = 1;         // item index within the current or previous tx
+    optional bytes tx_hash = 2;                // when set, the item belongs to this previous transaction
+    optional uint32 signature_offset = 3;      // TXSIGCHUNK: byte offset of the chunk in the full signature
+    optional uint32 signature_total_size = 4;  // TXSIGCHUNK: total signature length (set on every chunk)
+}
+
+/**
+ * Serialized signature data
+ * @embed
+ */
+message CKBTxRequestSerialized {
+    optional bytes signature = 1;  // 65-byte recoverable secp256k1 signature
+    optional bytes tx_hash = 2;    // 32-byte transaction hash
+}
+
+/**
+ * Acknowledge: Provide cell input data
+ * @next CKBTxRequest
+ */
+message CKBTxAckInput {
+    required CKBCellInput input = 1;
+}
+
+/**
+ * Acknowledge: Provide cell output data
+ * @next CKBTxRequest
+ */
+message CKBTxAckOutput {
+    required CKBCellOutput output = 1;
+}
+
+/**
+ * Acknowledge: Provide cell dependency data
+ * @next CKBTxRequest
+ */
+message CKBTxAckCellDep {
+    required CKBCellDep cell_dep = 1;
+}
+
+/**
+ * Acknowledge: Provide the header of a previous transaction.
+ * The device uses these counts to drive TXPREVINPUT/TXPREVOUTPUT/TXPREVCELLDEP
+ * requests, then re-serializes the previous RawTransaction and checks its hash
+ * against the spending input's OutPoint before trusting the output capacity.
+ * @next CKBTxRequest
+ */
+message CKBTxAckPrevMeta {
+    required uint32 version = 1;                        // RawTransaction version of the previous tx
+    required uint32 inputs_count = 2;                   // number of cell inputs in the previous tx
+    required uint32 outputs_count = 3;                  // number of cell outputs in the previous tx
+    optional uint32 cell_deps_count = 4 [default = 0];  // number of cell deps in the previous tx
+    repeated bytes header_deps = 5;                     // 32-byte header dep hashes, usually empty
+}
+
+/**
+ * A CKB block header, used to verify Nervos DAO compensation trustlessly.
+ * The device re-serializes the Molecule Header (192-byte RawHeader + 16-byte
+ * nonce), hashes it, and checks the result against the matching header_deps
+ * entry before trusting the accumulated rate (the `dao` field) for compensation.
+ * @embed
+ */
+message CKBBlockHeader {
+    required uint32 version = 1;           // RawHeader.version
+    required uint32 compact_target = 2;    // RawHeader.compact_target
+    required uint64 timestamp = 3;         // RawHeader.timestamp
+    required uint64 number = 4;            // RawHeader.number (block height)
+    required uint64 epoch = 5;             // RawHeader.epoch
+    required bytes parent_hash = 6;        // 32 bytes
+    required bytes transactions_root = 7;  // 32 bytes
+    required bytes proposals_hash = 8;     // 32 bytes
+    required bytes extra_hash = 9;         // 32 bytes (a.k.a. uncles_hash)
+    required bytes dao = 10;               // 32 bytes; packs C/AR/S/U as uint64 LE
+    required bytes nonce = 11;             // 16 bytes (Uint128 LE)
+}
+
+/**
+ * Acknowledge: Provide the full block header for header_deps[request_index].
+ * @next CKBTxRequest
+ */
+message CKBTxAckHeader {
+    required CKBBlockHeader header = 1;
+}
+
+/**
+ * Structured WitnessArgs for the signing witness of a lock-script group.
+ * The device serializes the Molecule WitnessArgs itself and blanks the lock
+ * field with `lock_size` zero bytes for the sighash_all preimage.
+ * @embed
+ */
+message CKBWitnessArgs {
+    optional uint32 lock_size = 1
+        [default = 65];              // size of the lock field (signature placeholder), must match the signature length
+    optional bytes input_type = 2;   // WitnessArgs.input_type contents; unset means None
+    optional bytes output_type = 3;  // WitnessArgs.output_type contents; unset means None
+}
+
+/**
+ * Acknowledge: Provide a single witness of the on-chain witness vector.
+ * For the signing witness (first input of the target group) the host sends
+ * `witness_args`; for every other or trailing witness it sends `raw` bytes
+ * exactly as they appear on chain.
+ * @next CKBTxRequest
+ */
+message CKBTxAckWitness {
+    optional CKBWitnessArgs witness_args = 1;  // structured WitnessArgs for the signing witness
+    optional bytes raw = 2;                    // raw bytes for other/trailing witnesses
+}
+
+/**
+ * Acknowledge a SPHINCS+ signature chunk. When the device is signing, the body
+ * is empty (the host only acknowledges the delivered chunk). When the device is
+ * verifying, the host returns the requested chunk in `signature`.
+ * @next CKBTxRequest
+ */
+message CKBTxAckSigChunk {
+    optional bytes signature = 1;  // signature chunk (verify direction); empty when acknowledging a sign chunk
+}
