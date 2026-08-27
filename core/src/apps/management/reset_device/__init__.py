@@ -199,6 +199,20 @@ async def _entropy_check(secret: bytes) -> bool:
 async def _backup_bip39(handler: layout.BackupHandler, mnemonic: str) -> None:
     words = mnemonic.split()
     await handler.intro(num_of_words=len(words))
+    if len(words) > 24:
+        # Extended backup. The first sub-phrase is not a spare wallet: HKDF turns
+        # it into the SPHINCS+ SK_SEED, and SK_SEED plus the on-chain PUB_SEED is
+        # enough to forge signatures. Restoring just those words elsewhere hands
+        # over the post-quantum key, so say so before the words are shown.
+        from trezor.enums import ButtonRequestType
+        from trezor.ui.layouts import show_warning
+
+        await show_warning(
+            "backup_extended_base_phrase",
+            TR.reset__extended_base_phrase_warning,
+            button=TR.buttons__continue,
+            br_code=ButtonRequestType.ResetDevice,
+        )
     await layout.show_and_confirm_single_share(handler, words)
 
 
