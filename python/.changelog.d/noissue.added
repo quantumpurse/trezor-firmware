@@ -1,2 +1,3 @@
 Added Nervos CKB support to trezorlib and `trezorctl ckb`: address generation, transaction signing, and message sign/verify.
 Added SPHINCS+ post-quantum CKB support to trezorlib: address derivation, transaction signing, and message sign/verify. Of these, `trezorctl ckb` exposes message sign/verify.
+Entropy check on extended BIP-39 mnemonics (36/54/72 words) verifies XPUBs of the base wallet (first sub-phrase), matching the device.

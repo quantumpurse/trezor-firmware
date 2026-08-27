@@ -279,14 +279,13 @@ def _seed_from_entropy(
         if strength_bytes <= 32:
             words = bip39.to_mnemonic(secret)
         else:
-            # Extended mnemonic: 3 concatenated standard BIP-39 phrases
+            # Extended mnemonic: 3 concatenated standard BIP-39 phrases, of
+            # which only the first is needed here. It is the base BIP-39 wallet
+            # (the device derives every non-SPHINCS+ coin from it alone), so the
+            # entropy check XPUBs come from that phrase, not from the
+            # concatenation. The other two feed SPHINCS+ only.
             sub_len = strength_bytes // 3
-            sub_phrases = []
-            for i in range(3):
-                sub_phrases.append(
-                    bip39.to_mnemonic(secret[i * sub_len : (i + 1) * sub_len])
-                )
-            words = " ".join(sub_phrases)
+            words = bip39.to_mnemonic(secret[:sub_len])
         seed = bip39.to_seed(words, passphrase="")
     elif is_slip39_backup_type(backup_type):
         import shamir_mnemonic
