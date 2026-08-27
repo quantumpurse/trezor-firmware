@@ -35,6 +35,8 @@ EntropyRequest.prev_entropy             max_size:32
 
 EntropyAck.entropy                      max_size:128
 
+EntropyCheckReady.full_phrase_digest    max_size:32
+
 RecoveryDevice.language                 max_size:17
 RecoveryDevice.label                    max_size:33
 

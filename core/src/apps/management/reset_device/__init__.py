@@ -167,17 +167,28 @@ async def reset_device(msg: ResetDevice) -> Success:
 
 async def _entropy_check(secret: bytes) -> bool:
     """Returns True to indicate that entropy check loop should end."""
+    from trezor.crypto.hashlib import sha256
     from trezor.messages import EntropyCheckContinue, EntropyCheckReady, GetPublicKey
     from trezor.wire.context import call_any
 
     from apps.bitcoin.get_public_key import get_public_key
     from apps.common import coininfo, paths
     from apps.common.keychain import Keychain
-    from apps.common.mnemonic import get_seed
+    from apps.common.mnemonic import bip39_base_phrase, get_seed
 
     seed = get_seed(mnemonic_secret=secret)
 
-    msg = EntropyCheckReady()
+    # The XPUBs below prove the base phrase only, because every wallet derives
+    # from it alone. For an extended mnemonic that leaves the other two
+    # sub-phrases - the ones that feed SPHINCS+ - outside the proof, so bind the
+    # whole phrase with a digest. Hashing the mnemonic directly is enough: the
+    # host recomputes the same string, and running PBKDF2 first would only add
+    # cost, not binding.
+    full_phrase_digest = None
+    if bip39_base_phrase(secret) != secret:
+        full_phrase_digest = sha256(secret).digest()
+
+    msg = EntropyCheckReady(full_phrase_digest=full_phrase_digest)
     while True:
         req = await call_any(
             msg,
