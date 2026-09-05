@@ -195,8 +195,8 @@ _EXPECTED_ADDRESS = {
         "ck4yexgvdn9ns6e45v2e6xyyjtwrcud549hz8cwclwtx07"
     ),
     "Testnet": (
-        "ckt1qq28aja4c5f8mxpwuymz6tptksn8sq7696cqd52saz90dj42pfl27qhxmy4ffqsrlz"
-        "ck4yexgvdn9ns6e45v2e6xyyjtwrcud549hz8cwc02mr5v"
+        "ckt1qq28aja4c5f8mxpwuymz6tptksn8sq7696cqd52saz90dj42pfl27p8xmy4ffqsrlz"
+        "ck4yexgvdn9ns6e45v2e6xyyjtwrcud549hz8cwcrxdp9u"
     ),
 }
 

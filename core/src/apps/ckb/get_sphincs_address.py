@@ -29,9 +29,9 @@ _CODE_HASH_TESTNET = (
 )
 
 # Hash type byte for the CKB full address payload: mainnet "type" = 0x01,
-# testnet "data1" = 0x02.
+# testnet "data2" = 0x04 (CKB-VM v2, matching the wallet).
 _HASH_TYPE_MAINNET = 0x01
-_HASH_TYPE_TESTNET = 0x02
+_HASH_TYPE_TESTNET = 0x04
 
 # Valid SPHINCS+ variant IDs (matching ParamId in ckb-fips205-utils).
 _VALID_VARIANTS = (48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59)

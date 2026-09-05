@@ -9596,6 +9596,9 @@ impl ::protobuf::reflect::ProtobufValue for EntropyAck {
 // @@protoc_insertion_point(message:hw.trezor.messages.management.EntropyCheckReady)
 #[derive(PartialEq,Clone,Default,Debug)]
 pub struct EntropyCheckReady {
+    // message fields
+    // @@protoc_insertion_point(field:hw.trezor.messages.management.EntropyCheckReady.full_phrase_digest)
+    pub full_phrase_digest: ::std::option::Option<::std::vec::Vec<u8>>,
     // special fields
     // @@protoc_insertion_point(special_field:hw.trezor.messages.management.EntropyCheckReady.special_fields)
     pub special_fields: ::protobuf::SpecialFields,
@@ -9612,9 +9615,50 @@ impl EntropyCheckReady {
         ::std::default::Default::default()
     }
 
+    // optional bytes full_phrase_digest = 1;
+
+    pub fn full_phrase_digest(&self) -> &[u8] {
+        match self.full_phrase_digest.as_ref() {
+            Some(v) => v,
+            None => &[],
+        }
+    }
+
+    pub fn clear_full_phrase_digest(&mut self) {
+        self.full_phrase_digest = ::std::option::Option::None;
+    }
+
+    pub fn has_full_phrase_digest(&self) -> bool {
+        self.full_phrase_digest.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_full_phrase_digest(&mut self, v: ::std::vec::Vec<u8>) {
+        self.full_phrase_digest = ::std::option::Option::Some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_full_phrase_digest(&mut self) -> &mut ::std::vec::Vec<u8> {
+        if self.full_phrase_digest.is_none() {
+            self.full_phrase_digest = ::std::option::Option::Some(::std::vec::Vec::new());
+        }
+        self.full_phrase_digest.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_full_phrase_digest(&mut self) -> ::std::vec::Vec<u8> {
+        self.full_phrase_digest.take().unwrap_or_else(|| ::std::vec::Vec::new())
+    }
+
     fn generated_message_descriptor_data() -> ::protobuf::reflect::GeneratedMessageDescriptorData {
-        let mut fields = ::std::vec::Vec::with_capacity(0);
+        let mut fields = ::std::vec::Vec::with_capacity(1);
         let mut oneofs = ::std::vec::Vec::with_capacity(0);
+        fields.push(::protobuf::reflect::rt::v2::make_option_accessor::<_, _>(
+            "full_phrase_digest",
+            |m: &EntropyCheckReady| { &m.full_phrase_digest },
+            |m: &mut EntropyCheckReady| { &mut m.full_phrase_digest },
+        ));
         ::protobuf::reflect::GeneratedMessageDescriptorData::new_2::<EntropyCheckReady>(
             "EntropyCheckReady",
             fields,
@@ -9633,6 +9677,9 @@ impl ::protobuf::Message for EntropyCheckReady {
     fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::Result<()> {
         while let Some(tag) = is.read_raw_tag_or_eof()? {
             match tag {
+                10 => {
+                    self.full_phrase_digest = ::std::option::Option::Some(is.read_bytes()?);
+                },
                 tag => {
                     ::protobuf::rt::read_unknown_or_skip_group(tag, is, self.special_fields.mut_unknown_fields())?;
                 },
@@ -9645,12 +9692,18 @@ impl ::protobuf::Message for EntropyCheckReady {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u64 {
         let mut my_size = 0;
+        if let Some(v) = self.full_phrase_digest.as_ref() {
+            my_size += ::protobuf::rt::bytes_size(1, &v);
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.special_fields.unknown_fields());
         self.special_fields.cached_size().set(my_size as u32);
         my_size
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::Result<()> {
+        if let Some(v) = self.full_phrase_digest.as_ref() {
+            os.write_bytes(1, v)?;
+        }
         os.write_unknown_fields(self.special_fields.unknown_fields())?;
         ::std::result::Result::Ok(())
     }
@@ -9668,11 +9721,13 @@ impl ::protobuf::Message for EntropyCheckReady {
     }
 
     fn clear(&mut self) {
+        self.full_phrase_digest = ::std::option::Option::None;
         self.special_fields.clear();
     }
 
     fn default_instance() -> &'static EntropyCheckReady {
         static instance: EntropyCheckReady = EntropyCheckReady {
+            full_phrase_digest: ::std::option::Option::None,
             special_fields: ::protobuf::SpecialFields::new(),
         };
         &instance
@@ -13574,7 +13629,8 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x02(\rR\x0bmemberCount\"b\n\x0eEntropyRequest\x12-\n\x12entropy_commitm\
     ent\x18\x01\x20\x01(\x0cR\x11entropyCommitment\x12!\n\x0cprev_entropy\
     \x18\x02\x20\x01(\x0cR\x0bprevEntropy\"&\n\nEntropyAck\x12\x18\n\x07entr\
-    opy\x18\x01\x20\x02(\x0cR\x07entropy\"\x13\n\x11EntropyCheckReady\"5\n\
+    opy\x18\x01\x20\x02(\x0cR\x07entropy\"A\n\x11EntropyCheckReady\x12,\n\
+    \x12full_phrase_digest\x18\x01\x20\x01(\x0cR\x10fullPhraseDigest\"5\n\
     \x14EntropyCheckContinue\x12\x1d\n\x06finish\x18\x01\x20\x01(\x08:\x05fa\
     lseR\x06finish\"\xdf\x04\n\x0eRecoveryDevice\x12\x1d\n\nword_count\x18\
     \x01\x20\x01(\rR\twordCount\x123\n\x15passphrase_protection\x18\x02\x20\
