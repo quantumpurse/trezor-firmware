@@ -244,11 +244,8 @@ def is_slip39_backup_type(backup_type: messages.BackupType) -> bool:
     )
 
 
-def _seed_from_entropy(
-    internal_entropy: bytes,
-    external_entropy: bytes,
-    strength: int,
-    backup_type: messages.BackupType,
+def _secret_from_entropy(
+    internal_entropy: bytes, external_entropy: bytes, strength: int
 ) -> bytes:
     strength_bytes = strength // 8
 
@@ -272,6 +269,30 @@ def _seed_from_entropy(
     if len(secret) * 8 != strength:
         raise ValueError("Entropy length mismatch")
 
+    return secret
+
+
+def _extended_mnemonic_from_secret(secret: bytes) -> str:
+    """The 36/54/72-word string the device stores, as `secret` reaches it."""
+    import mnemonic
+
+    bip39 = mnemonic.Mnemonic("english")
+    sub_len = len(secret) // 3
+
+    return " ".join(
+        bip39.to_mnemonic(secret[i * sub_len : (i + 1) * sub_len]) for i in range(3)
+    )
+
+
+def _seed_from_entropy(
+    internal_entropy: bytes,
+    external_entropy: bytes,
+    strength: int,
+    backup_type: messages.BackupType,
+) -> bytes:
+    strength_bytes = strength // 8
+    secret = _secret_from_entropy(internal_entropy, external_entropy, strength)
+
     if backup_type == messages.BackupType.Bip39:
         import mnemonic
 
@@ -279,14 +300,13 @@ def _seed_from_entropy(
         if strength_bytes <= 32:
             words = bip39.to_mnemonic(secret)
         else:
-            # Extended mnemonic: 3 concatenated standard BIP-39 phrases
+            # Extended mnemonic: 3 concatenated standard BIP-39 phrases, of
+            # which only the first is needed here. It is the base BIP-39 wallet
+            # (the device derives every non-SPHINCS+ coin from it alone), so the
+            # entropy check XPUBs come from that phrase, not from the
+            # concatenation. The other two feed SPHINCS+ only.
             sub_len = strength_bytes // 3
-            sub_phrases = []
-            for i in range(3):
-                sub_phrases.append(
-                    bip39.to_mnemonic(secret[i * sub_len : (i + 1) * sub_len])
-                )
-            words = " ".join(sub_phrases)
+            words = bip39.to_mnemonic(secret[:sub_len])
         seed = bip39.to_seed(words, passphrase="")
     elif is_slip39_backup_type(backup_type):
         import shamir_mnemonic
@@ -526,6 +546,7 @@ def _reset_with_entropycheck(
         external_entropy: bytes,
         entropy_commitment: bytes | None,
         xpubs: list[tuple[Address, str]],
+        full_phrase_digest: bytes | None,
     ) -> None:
         if internal_entropy is None or entropy_commitment is None:
             raise TrezorException("Invalid entropy check response.")
@@ -543,6 +564,18 @@ def _reset_with_entropycheck(
             if slip10.get_xpub_from_path(path) != xpub:
                 raise TrezorException("Invalid XPUB in entropy check")
 
+        # The XPUBs above cover the base phrase only. For an extended mnemonic the
+        # device also binds the sub-phrases that feed SPHINCS+; require it, since
+        # a firmware that skipped them could otherwise omit the field silently.
+        if strength > 256:
+            if full_phrase_digest is None:
+                raise TrezorException("Missing full-phrase digest in entropy check")
+            full_phrase = _extended_mnemonic_from_secret(
+                _secret_from_entropy(internal_entropy, external_entropy, strength)
+            )
+            if hashlib.sha256(full_phrase.encode()).digest() != full_phrase_digest:
+                raise TrezorException("Invalid full-phrase digest in entropy check")
+
     xpubs = []
     resp = session.call(reset_msg, expect=messages.EntropyRequest)
     entropy_commitment = resp.entropy_commitment
@@ -550,7 +583,7 @@ def _reset_with_entropycheck(
     while True:
         # provide external entropy for this round
         external_entropy = get_entropy()
-        session.call(
+        ready = session.call(
             messages.EntropyAck(entropy=external_entropy),
             expect=messages.EntropyCheckReady,
         )
@@ -576,7 +609,11 @@ def _reset_with_entropycheck(
 
         # Check the entropy commitment from the previous round.
         verify_entropy_commitment(
-            resp.prev_entropy, external_entropy, entropy_commitment, xpubs
+            resp.prev_entropy,
+            external_entropy,
+            entropy_commitment,
+            xpubs,
+            ready.full_phrase_digest,
         )
         # Update the entropy commitment for the next round.
         entropy_commitment = resp.entropy_commitment

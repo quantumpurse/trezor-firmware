@@ -4650,6 +4650,16 @@ class EntropyAck(protobuf.MessageType):
 
 class EntropyCheckReady(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 994
+    FIELDS = {
+        1: protobuf.Field("full_phrase_digest", "bytes", repeated=False, required=False, default=None),
+    }
+
+    def __init__(
+        self,
+        *,
+        full_phrase_digest: Optional["bytes"] = None,
+    ) -> None:
+        self.full_phrase_digest = full_phrase_digest
 
 
 class EntropyCheckContinue(protobuf.MessageType):

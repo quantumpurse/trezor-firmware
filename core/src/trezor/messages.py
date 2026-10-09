@@ -3176,6 +3176,14 @@ if TYPE_CHECKING:
             return isinstance(msg, cls)
 
     class EntropyCheckReady(protobuf.MessageType):
+        full_phrase_digest: "AnyBytes | None"
+
+        def __init__(
+            self,
+            *,
+            full_phrase_digest: "AnyBytes | None" = None,
+        ) -> None:
+            pass
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["EntropyCheckReady"]:

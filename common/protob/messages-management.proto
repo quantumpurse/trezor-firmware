@@ -549,7 +549,14 @@ message EntropyAck {
  * @next EntropyCheckContinue
  * @next GetPublicKey
  */
-message EntropyCheckReady {}
+message EntropyCheckReady {
+    optional bytes full_phrase_digest = 1;  // SHA-256 over the WHOLE extended mnemonic string,
+                                            // exactly as stored (words separated by single
+                                            // spaces, no trailing newline). The XPUBs of this
+                                            // round prove only the base phrase, so this binds
+                                            // the other sub-phrases too. Extended mnemonics
+                                            // only; unset otherwise.
+}
 
 /**
  * Request: Proceed with the next phase of the entropy check protocol, asking Trezor to either reveal its internal
