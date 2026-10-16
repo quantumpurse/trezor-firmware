@@ -32,6 +32,9 @@ def is_bip39() -> bool:
     return get_type() == BackupType.Bip39
 
 
+bip39_base_phrase = storage_device.bip39_base_phrase
+
+
 def get_seed(
     passphrase: str = "",
     progress_bar: bool = True,
@@ -49,7 +52,9 @@ def get_seed(
     if is_bip39():
         from trezor.crypto import bip39
 
-        seed = bip39.seed(mnemonic_secret.decode(), passphrase, render_func)
+        seed = bip39.seed(
+            bip39_base_phrase(mnemonic_secret).decode(), passphrase, render_func
+        )
 
     else:  # SLIP-39
         from trezor.crypto import slip39

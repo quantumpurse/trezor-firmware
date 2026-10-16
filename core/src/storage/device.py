@@ -155,6 +155,17 @@ def get_mnemonic_secret() -> bytes | None:
     return common.get(_NAMESPACE, _MNEMONIC_SECRET)
 
 
+def bip39_base_phrase(secret: bytes) -> bytes:
+    """First third of an extended (36/54/72-word) mnemonic, else unchanged."""
+    count = secret.count(b" ") + 1
+    if count not in (36, 54, 72):
+        return secret
+    end = -1
+    for _ in range(count // 3):
+        end = secret.find(b" ", end + 1)
+    return secret[:end]
+
+
 def store_mnemonic_secret(
     secret: bytes,
     needs_backup: bool = False,
@@ -196,7 +207,7 @@ if not utils.BITCOIN_ONLY:
 
         if get_backup_type() == BackupType.Bip39:
             try:
-                binary_mnemonic = bip39.mnemonic_to_bits(secret.decode())
+                binary_mnemonic = bip39.mnemonic_to_bits(bip39_base_phrase(secret))
             except ValueError:
                 if __debug__ and allow_derivation_fail:
                     # There is a possibility to load device with mnemonics that cannot

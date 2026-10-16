@@ -84,8 +84,10 @@ async def reset_device(msg: ResetDevice) -> Success:
 
     prev_int_entropy = None
     while True:
-        # generate internal entropy
-        int_entropy = random.bytes(32, True)
+        # Sample TRNG proportionally to strength so extended mnemonics get an
+        # independent entropy slice per sub-secret (see _compute_secret_from_entropy).
+        int_entropy_len = max(32, msg.strength // 8)
+        int_entropy = random.bytes(int_entropy_len, True)
         if __debug__:
             storage.debug.reset_internal_entropy[:] = int_entropy
 
@@ -106,7 +108,17 @@ async def reset_device(msg: ResetDevice) -> Success:
 
         if backup_type == BAK_T_BIP39:
             # in BIP-39 we store mnemonic string instead of the secret
-            secret = bip39.from_data(secret).encode()
+            if len(secret) > 32:
+                # Extended: generate 3 independent BIP-39 sub-phrases
+                sub_len = len(secret) // 3
+                mnemonics = []
+                for i in range(3):
+                    mnemonics.append(
+                        bip39.from_data(secret[i * sub_len : (i + 1) * sub_len])
+                    )
+                secret = " ".join(mnemonics).encode()
+            else:
+                secret = bip39.from_data(secret).encode()
 
         if not msg.entropy_check or await _entropy_check(secret):
             break
@@ -155,17 +167,28 @@ async def reset_device(msg: ResetDevice) -> Success:
 
 async def _entropy_check(secret: bytes) -> bool:
     """Returns True to indicate that entropy check loop should end."""
+    from trezor.crypto.hashlib import sha256
     from trezor.messages import EntropyCheckContinue, EntropyCheckReady, GetPublicKey
     from trezor.wire.context import call_any
 
     from apps.bitcoin.get_public_key import get_public_key
     from apps.common import coininfo, paths
     from apps.common.keychain import Keychain
-    from apps.common.mnemonic import get_seed
+    from apps.common.mnemonic import bip39_base_phrase, get_seed
 
     seed = get_seed(mnemonic_secret=secret)
 
-    msg = EntropyCheckReady()
+    # The XPUBs below prove the base phrase only, because every wallet derives
+    # from it alone. For an extended mnemonic that leaves the other two
+    # sub-phrases - the ones that feed SPHINCS+ - outside the proof, so bind the
+    # whole phrase with a digest. Hashing the mnemonic directly is enough: the
+    # host recomputes the same string, and running PBKDF2 first would only add
+    # cost, not binding.
+    full_phrase_digest = None
+    if bip39_base_phrase(secret) != secret:
+        full_phrase_digest = sha256(secret).digest()
+
+    msg = EntropyCheckReady(full_phrase_digest=full_phrase_digest)
     while True:
         req = await call_any(
             msg,
@@ -187,6 +210,20 @@ async def _entropy_check(secret: bytes) -> bool:
 async def _backup_bip39(handler: layout.BackupHandler, mnemonic: str) -> None:
     words = mnemonic.split()
     await handler.intro(num_of_words=len(words))
+    if len(words) > 24:
+        # Extended backup. The first sub-phrase is not a spare wallet: HKDF turns
+        # it into the SPHINCS+ SK_SEED, and SK_SEED plus the on-chain PUB_SEED is
+        # enough to forge signatures. Restoring just those words elsewhere hands
+        # over the post-quantum key, so say so before the words are shown.
+        from trezor.enums import ButtonRequestType
+        from trezor.ui.layouts import show_warning
+
+        await show_warning(
+            "backup_extended_base_phrase",
+            TR.reset__extended_base_phrase_warning,
+            button=TR.buttons__continue,
+            br_code=ButtonRequestType.ResetDevice,
+        )
     await layout.show_and_confirm_single_share(handler, words)
 
 
@@ -331,7 +368,12 @@ def _validate_reset_device(msg: ResetDevice) -> None:
         if msg.strength not in (128, 256):
             raise ProcessError("Invalid strength (has to be 128 or 256 bits)")
     elif backup_type == BAK_T_BIP39:
-        if msg.strength not in (128, 192, 256):
+        if backup_types.EXTENDED_BIP39_ENABLED:
+            if msg.strength not in (128, 192, 256, 384, 576, 768):
+                raise ProcessError(
+                    "Invalid strength (has to be 128, 192, 256, 384, 576 or 768 bits)"
+                )
+        elif msg.strength not in (128, 192, 256):
             raise ProcessError("Invalid strength (has to be 128, 192 or 256 bits)")
     else:
         raise ProcessError("Backup type not implemented")
@@ -345,15 +387,30 @@ def _compute_secret_from_entropy(
 ) -> bytes:
     from trezor.crypto import hashlib
 
-    # combine internal and external entropy
-    ehash = hashlib.sha256()
-    ehash.update(int_entropy)
-    ehash.update(ext_entropy)
-    entropy = ehash.digest()
-    # take a required number of bytes
     strength = strength_bits // 8
-    secret = entropy[:strength]
-    return secret
+
+    if strength <= 32:
+        ehash = hashlib.sha256()
+        ehash.update(int_entropy)
+        ehash.update(ext_entropy)
+        entropy = ehash.digest()
+        return entropy[:strength]
+    else:
+        # Extended (384/576/768 bits): 3 independent sub-secrets, each hashed
+        # from its own `strength`-proportional TRNG slice plus a domain
+        # separator, so the mnemonic carries the full requested entropy.
+        if len(int_entropy) != strength:
+            raise ValueError("int_entropy length must match strength for extended")
+        sub_strength = strength // 3
+        parts = []
+        for i in range(3):
+            sub_int = int_entropy[i * sub_strength : (i + 1) * sub_strength]
+            ehash = hashlib.sha256()
+            ehash.update(sub_int)
+            ehash.update(ext_entropy)
+            ehash.update(bytes([i]))
+            parts.append(ehash.digest()[:sub_strength])
+        return b"".join(parts)
 
 
 @with_prolonged_suspend_time

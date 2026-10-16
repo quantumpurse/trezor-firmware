@@ -167,6 +167,30 @@ trezor_message_impl! {
     CardanoMessageSignature => MessageType_CardanoMessageSignature,
 }
 
+#[cfg(feature = "ckb")]
+trezor_message_impl! {
+    CKBGetAddress => MessageType_CKBGetAddress,
+    CKBAddress => MessageType_CKBAddress,
+    CKBSignTx => MessageType_CKBSignTx,
+    CKBTxRequest => MessageType_CKBTxRequest,
+    CKBTxAckInput => MessageType_CKBTxAckInput,
+    CKBTxAckOutput => MessageType_CKBTxAckOutput,
+    CKBTxAckCellDep => MessageType_CKBTxAckCellDep,
+    CKBSignMessage => MessageType_CKBSignMessage,
+    CKBMessageSignature => MessageType_CKBMessageSignature,
+    CKBVerifyMessage => MessageType_CKBVerifyMessage,
+    CKBTxAckWitness => MessageType_CKBTxAckWitness,
+    CKBTxAckPrevMeta => MessageType_CKBTxAckPrevMeta,
+    CKBTxAckHeader => MessageType_CKBTxAckHeader,
+    CKBSphincsPlusGetAddress => MessageType_CKBSphincsPlusGetAddress,
+    CKBSphincsPlusAddress => MessageType_CKBSphincsPlusAddress,
+    CKBSphincsPlusSignTx => MessageType_CKBSphincsPlusSignTx,
+    CKBTxAckSigChunk => MessageType_CKBTxAckSigChunk,
+    CKBSphincsPlusSignMessage => MessageType_CKBSphincsPlusSignMessage,
+    CKBSphincsPlusMessageSignature => MessageType_CKBSphincsPlusMessageSignature,
+    CKBSphincsPlusVerifyMessage => MessageType_CKBSphincsPlusVerifyMessage,
+}
+
 #[cfg(feature = "eos")]
 trezor_message_impl! {
     EosGetPublicKey => MessageType_EosGetPublicKey,

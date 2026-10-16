@@ -149,6 +149,9 @@ def get_features() -> Features:
                 ]
             )
 
+        if utils.INTERNAL_MODEL == "T3W1":
+            f.capabilities.append(Capability.CKB)
+
     if utils.USE_HAPTIC:
         f.haptic_feedback = storage_device.get_haptic_feedback()
         f.capabilities.append(Capability.Haptic)

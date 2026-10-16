@@ -5,8 +5,9 @@ import storage
 import storage.recovery
 from mock_storage import mock_storage
 from trezor.enums import BackupType
+from trezor.errors import MnemonicError
 
-from apps.management.recovery_device.recover import process_slip39
+from apps.management.recovery_device.recover import process_bip39, process_slip39
 from apps.management.recovery_device.word_validity import (
     AlreadyAdded,
     IdentifierMismatch,
@@ -26,6 +27,51 @@ MNEMONIC_SLIP39_ADVANCED_20 = [
     "eraser senior ceramic shaft dynamic become junior wrist silver peasant force math alto coal amazing segment yelp velvet image paces",
     "eraser senior ceramic round column hawk trust auction smug shame alive greatest sheriff living perfect corner chest sled fumes adequate",
 ]
+
+
+# Three distinct standard phrases, each with a valid checksum.
+_P12_A = " ".join(["all"] * 11 + ["all"])
+_P12_B = " ".join(["abandon"] * 11 + ["about"])
+_P12_C = " ".join(["zoo"] * 11 + ["abstract"])
+_P24_A = " ".join(["abandon"] * 23 + ["art"])
+_P24_B = " ".join(["all"] * 23 + ["answer"])
+_P24_C = " ".join(["zoo"] * 23 + ["buddy"])
+
+
+class TestBip39Extended(unittest.TestCase):
+    def test_accepts_standard(self):
+        for phrase in (_P12_A, _P24_A):
+            self.assertEqual(process_bip39(phrase), phrase.encode())
+
+    def test_accepts_distinct_sub_phrases(self):
+        for phrase in (
+            " ".join([_P12_A, _P12_B, _P12_C]),
+            " ".join([_P24_A, _P24_B, _P24_C]),
+        ):
+            self.assertEqual(process_bip39(phrase), phrase.encode())
+
+    def test_rejects_repeated_sub_phrase(self):
+        # Every pairing must be caught: each sub-phrase feeds a different SPHINCS+
+        # component, so any collision publishes a secret inside a public value.
+        for phrases in (
+            [_P12_A, _P12_A, _P12_C],
+            [_P12_A, _P12_B, _P12_A],
+            [_P12_A, _P12_B, _P12_B],
+            [_P12_A, _P12_A, _P12_A],
+            [_P24_A, _P24_A, _P24_C],
+        ):
+            with self.assertRaises(MnemonicError):
+                process_bip39(" ".join(phrases))
+
+    def test_rejects_bad_checksum_in_any_sub_phrase(self):
+        bad = " ".join(["zoo"] * 12)
+        for phrases in (
+            [bad, _P12_B, _P12_C],
+            [_P12_A, bad, _P12_C],
+            [_P12_A, _P12_B, bad],
+        ):
+            with self.assertRaises(MnemonicError):
+                process_bip39(" ".join(phrases))
 
 
 class TestSlip39(unittest.TestCase):
