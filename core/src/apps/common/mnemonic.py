@@ -10,6 +10,9 @@ if TYPE_CHECKING:
     from trezor.ui import ProgressLayout
 
 
+SPHINCS_ONLY_ERROR = "Extended mnemonics support SPHINCS+ only."
+
+
 def get() -> tuple[bytes | None, BackupType]:
     return get_secret(), get_type()
 
@@ -32,6 +35,17 @@ def is_bip39() -> bool:
     return get_type() == BackupType.Bip39
 
 
+def is_sphincs_only() -> bool:
+    """
+    True if the stored mnemonic is an extended (36/54/72-word) BIP-39 one, which
+    only SPHINCS+ consumes. No BIP-32 seed is derived from it.
+    """
+    secret = get_secret()
+    return (
+        secret is not None and is_bip39() and storage_device.is_extended_bip39(secret)
+    )
+
+
 def get_seed(
     passphrase: str = "",
     progress_bar: bool = True,
@@ -40,6 +54,10 @@ def get_seed(
     mnemonic_secret = mnemonic_secret or get_secret()
     if mnemonic_secret is None:
         raise ValueError  # Mnemonic not set
+    if is_bip39() and storage_device.is_extended_bip39(mnemonic_secret):
+        from trezor.wire import DataError
+
+        raise DataError(SPHINCS_ONLY_ERROR)
 
     render_func = None
     if progress_bar and not utils.DISABLE_ANIMATION:

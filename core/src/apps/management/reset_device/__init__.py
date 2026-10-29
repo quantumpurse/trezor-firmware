@@ -176,15 +176,16 @@ async def _entropy_check(secret: bytes) -> bool:
     from apps.common.keychain import Keychain
     from apps.common.mnemonic import get_seed
 
-    seed = get_seed(mnemonic_secret=secret)
-
-    # Bind every sub-phrase of an extended (36/54/72-word) mnemonic - the ones
-    # that feed SPHINCS+ - with a digest. Hashing the mnemonic directly is
-    # enough: the host recomputes the same string, and running PBKDF2 first
-    # would only add cost, not binding.
-    full_phrase_digest = None
-    if secret.count(b" ") >= 24:
+    if storage_device.is_extended_bip39(secret):
+        # SPHINCS+ only: there is no BIP-32 wallet whose XPUBs could prove the
+        # secret, so bind the whole mnemonic with a digest instead. Hashing it
+        # directly is enough: the host recomputes the same string, and running
+        # PBKDF2 first would only add cost, not binding.
+        seed = None
         full_phrase_digest = sha256(secret).digest()
+    else:
+        seed = get_seed(mnemonic_secret=secret)
+        full_phrase_digest = None
 
     msg = EntropyCheckReady(full_phrase_digest=full_phrase_digest)
     while True:
@@ -199,6 +200,7 @@ async def _entropy_check(secret: bytes) -> bool:
             return req.finish
 
         assert GetPublicKey.is_type_of(req)
+        assert seed is not None  # hosts send no GetPublicKey for an extended mnemonic
         req.show_display = False
         curve_name = req.ecdsa_curve_name or coininfo.by_name(req.coin_name).curve_name
         keychain = Keychain(seed, curve_name, [paths.AlwaysMatchingSchema])

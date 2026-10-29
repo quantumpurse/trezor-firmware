@@ -523,6 +523,9 @@ def _reset_with_entropycheck(
     backup_type = reset_msg.backup_type
 
     def get_xpubs() -> list[tuple[Address, str]]:
+        if strength > 256:
+            # An extended mnemonic is SPHINCS+ only and has no BIP-32 wallet.
+            return []
         xpubs = []
         for path in paths:
             resp = session.call(
@@ -546,18 +549,10 @@ def _reset_with_entropycheck(
         if calculated_commitment != entropy_commitment:
             raise TrezorException("Invalid entropy commitment.")
 
-        seed = _seed_from_entropy(
-            internal_entropy, external_entropy, strength, backup_type
-        )
-        slip10 = SLIP10.from_seed(seed)
-        for path, xpub in xpubs:
-            if slip10.get_xpub_from_path(path) != xpub:
-                raise TrezorException("Invalid XPUB in entropy check")
-
-        # For an extended mnemonic the device also binds the sub-phrases that
-        # feed SPHINCS+; require it, since a firmware that skipped them could
-        # otherwise omit the field silently.
         if strength > 256:
+            # An extended mnemonic has no BIP-32 wallet, so the device proves the
+            # secret with a digest of the whole mnemonic instead of XPUBs. It is
+            # optional on the wire, so require it here.
             if full_phrase_digest is None:
                 raise TrezorException("Missing full-phrase digest in entropy check")
             full_phrase = _extended_mnemonic_from_secret(
@@ -565,6 +560,15 @@ def _reset_with_entropycheck(
             )
             if hashlib.sha256(full_phrase.encode()).digest() != full_phrase_digest:
                 raise TrezorException("Invalid full-phrase digest in entropy check")
+            return
+
+        seed = _seed_from_entropy(
+            internal_entropy, external_entropy, strength, backup_type
+        )
+        slip10 = SLIP10.from_seed(seed)
+        for path, xpub in xpubs:
+            if slip10.get_xpub_from_path(path) != xpub:
+                raise TrezorException("Invalid XPUB in entropy check")
 
     xpubs = []
     resp = session.call(reset_msg, expect=messages.EntropyRequest)

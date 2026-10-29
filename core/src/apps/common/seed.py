@@ -65,6 +65,9 @@ if utils.USE_THP:
 
     async def get_seed() -> bytes:  # type: ignore [Function declaration "get_seed" is obscured by a declaration of the same name]
         common_seed = context.cache_get(APP_COMMON_SEED)
+        if common_seed is None and mnemonic.is_sphincs_only():
+            # derive_and_store_roots() leaves it unset on purpose
+            raise DataError(mnemonic.SPHINCS_ONLY_ERROR)
         assert common_seed is not None
         return common_seed
 
@@ -108,6 +111,11 @@ if utils.USE_THP:
 
             if ctx.cache.is_set(APP_CARDANO_ICARUS_SECRET):
                 raise Exception("Cardano icarus secret is already set!")
+
+            if mnemonic.is_sphincs_only():
+                # SPHINCS+ reads the mnemonic itself, so the session needs no
+                # seed; every BIP-32 request then fails in get_seed().
+                return
 
             passphrase = await get_passphrase(msg)
             common_seed = mnemonic.get_seed(passphrase)
