@@ -215,6 +215,8 @@ def get_features() -> Features:
         else:
             f.recovery_status = RecoveryStatus.Nothing
         f.backup_type = mnemonic.get_type()
+        if utils.INTERNAL_MODEL == "T3W1":
+            f.sphincs_only = mnemonic.is_sphincs_only()
 
         # Only some models are capable of SD card
         if utils.USE_SD_CARD:

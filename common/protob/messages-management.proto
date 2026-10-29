@@ -146,6 +146,10 @@ message Features {
     optional bool usb_connected = 59;                              // USB connected
     optional bool wireless_connected = 60;                         // Wireless charger connected
     optional bool tap_to_wake = 63;                                // tap to wake is enabled (None = not supported)
+    // Fork-specific; numbered far from upstream's sequence to avoid collisions
+    // (field tags must stay below 256).
+    optional bool sphincs_only = 200;  // the mnemonic is an extended (36/54/72-word) one, which
+                                       // supports SPHINCS+ only; no BIP-32 coin is available
 
     enum BackupAvailability {
         /// Device is already backed up, or a previous backup has failed.
@@ -552,10 +556,10 @@ message EntropyAck {
 message EntropyCheckReady {
     optional bytes full_phrase_digest = 1;  // SHA-256 over the WHOLE extended mnemonic string,
                                             // exactly as stored (words separated by single
-                                            // spaces, no trailing newline). The XPUBs of this
-                                            // round prove only the base phrase, so this binds
-                                            // the other sub-phrases too. Extended mnemonics
-                                            // only; unset otherwise.
+                                            // spaces, no trailing newline). An extended
+                                            // mnemonic has no BIP-32 wallet, so this replaces
+                                            // the XPUBs as the proof of the secret. Extended
+                                            // mnemonics only; unset otherwise.
 }
 
 /**

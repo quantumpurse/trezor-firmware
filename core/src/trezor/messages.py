@@ -2648,6 +2648,7 @@ if TYPE_CHECKING:
         usb_connected: "bool | None"
         wireless_connected: "bool | None"
         tap_to_wake: "bool | None"
+        sphincs_only: "bool | None"
 
         def __init__(
             self,
@@ -2712,6 +2713,7 @@ if TYPE_CHECKING:
             usb_connected: "bool | None" = None,
             wireless_connected: "bool | None" = None,
             tap_to_wake: "bool | None" = None,
+            sphincs_only: "bool | None" = None,
         ) -> None:
             pass
 

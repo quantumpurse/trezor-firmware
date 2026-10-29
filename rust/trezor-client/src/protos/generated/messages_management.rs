@@ -485,6 +485,8 @@ pub struct Features {
     pub wireless_connected: ::std::option::Option<bool>,
     // @@protoc_insertion_point(field:hw.trezor.messages.management.Features.tap_to_wake)
     pub tap_to_wake: ::std::option::Option<bool>,
+    // @@protoc_insertion_point(field:hw.trezor.messages.management.Features.sphincs_only)
+    pub sphincs_only: ::std::option::Option<bool>,
     // special fields
     // @@protoc_insertion_point(special_field:hw.trezor.messages.management.Features.special_fields)
     pub special_fields: ::protobuf::SpecialFields,
@@ -1832,8 +1834,27 @@ impl Features {
         self.tap_to_wake = ::std::option::Option::Some(v);
     }
 
+    // optional bool sphincs_only = 200;
+
+    pub fn sphincs_only(&self) -> bool {
+        self.sphincs_only.unwrap_or(false)
+    }
+
+    pub fn clear_sphincs_only(&mut self) {
+        self.sphincs_only = ::std::option::Option::None;
+    }
+
+    pub fn has_sphincs_only(&self) -> bool {
+        self.sphincs_only.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_sphincs_only(&mut self, v: bool) {
+        self.sphincs_only = ::std::option::Option::Some(v);
+    }
+
     fn generated_message_descriptor_data() -> ::protobuf::reflect::GeneratedMessageDescriptorData {
-        let mut fields = ::std::vec::Vec::with_capacity(61);
+        let mut fields = ::std::vec::Vec::with_capacity(62);
         let mut oneofs = ::std::vec::Vec::with_capacity(0);
         fields.push(::protobuf::reflect::rt::v2::make_option_accessor::<_, _>(
             "vendor",
@@ -2140,6 +2161,11 @@ impl Features {
             |m: &Features| { &m.tap_to_wake },
             |m: &mut Features| { &mut m.tap_to_wake },
         ));
+        fields.push(::protobuf::reflect::rt::v2::make_option_accessor::<_, _>(
+            "sphincs_only",
+            |m: &Features| { &m.sphincs_only },
+            |m: &mut Features| { &mut m.sphincs_only },
+        ));
         ::protobuf::reflect::GeneratedMessageDescriptorData::new_2::<Features>(
             "Features",
             fields,
@@ -2353,6 +2379,9 @@ impl ::protobuf::Message for Features {
                 504 => {
                     self.tap_to_wake = ::std::option::Option::Some(is.read_bool()?);
                 },
+                1600 => {
+                    self.sphincs_only = ::std::option::Option::Some(is.read_bool()?);
+                },
                 tag => {
                     ::protobuf::rt::read_unknown_or_skip_group(tag, is, self.special_fields.mut_unknown_fields())?;
                 },
@@ -2548,6 +2577,9 @@ impl ::protobuf::Message for Features {
         if let Some(v) = self.tap_to_wake {
             my_size += 2 + 1;
         }
+        if let Some(v) = self.sphincs_only {
+            my_size += 2 + 1;
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.special_fields.unknown_fields());
         self.special_fields.cached_size().set(my_size as u32);
         my_size
@@ -2737,6 +2769,9 @@ impl ::protobuf::Message for Features {
         if let Some(v) = self.tap_to_wake {
             os.write_bool(63, v)?;
         }
+        if let Some(v) = self.sphincs_only {
+            os.write_bool(200, v)?;
+        }
         os.write_unknown_fields(self.special_fields.unknown_fields())?;
         ::std::result::Result::Ok(())
     }
@@ -2815,6 +2850,7 @@ impl ::protobuf::Message for Features {
         self.usb_connected = ::std::option::Option::None;
         self.wireless_connected = ::std::option::Option::None;
         self.tap_to_wake = ::std::option::Option::None;
+        self.sphincs_only = ::std::option::Option::None;
         self.special_fields.clear();
     }
 
@@ -2881,6 +2917,7 @@ impl ::protobuf::Message for Features {
             usb_connected: ::std::option::Option::None,
             wireless_connected: ::std::option::Option::None,
             tap_to_wake: ::std::option::Option::None,
+            sphincs_only: ::std::option::Option::None,
             special_fields: ::protobuf::SpecialFields::new(),
         };
         &instance
@@ -13462,7 +13499,7 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \roptions.proto\"\x80\x01\n\nInitialize\x12\x1d\n\nsession_id\x18\x01\
     \x20\x01(\x0cR\tsessionId\x12,\n\x10_skip_passphrase\x18\x02\x20\x01(\
     \x08R\x0eSkipPassphraseB\x02\x18\x01\x12%\n\x0ederive_cardano\x18\x03\
-    \x20\x01(\x08R\rderiveCardano\"\r\n\x0bGetFeatures\"\xe9\x1b\n\x08Featur\
+    \x20\x01(\x08R\rderiveCardano\"\r\n\x0bGetFeatures\"\x8d\x1c\n\x08Featur\
     es\x12\x16\n\x06vendor\x18\x01\x20\x01(\tR\x06vendor\x12#\n\rmajor_versi\
     on\x18\x02\x20\x02(\rR\x0cmajorVersion\x12#\n\rminor_version\x18\x03\x20\
     \x02(\rR\x0cminorVersion\x12#\n\rpatch_version\x18\x04\x20\x02(\rR\x0cpa\
@@ -13520,45 +13557,46 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x16autoLockDelayBatteryMs\x12\x10\n\x03led\x18:\x20\x01(\x08R\x03led\
     \x12#\n\rusb_connected\x18;\x20\x01(\x08R\x0cusbConnected\x12-\n\x12wire\
     less_connected\x18<\x20\x01(\x08R\x11wirelessConnected\x12\x1e\n\x0btap_\
-    to_wake\x18?\x20\x01(\x08R\ttapToWake\"C\n\x12BackupAvailability\x12\x10\
-    \n\x0cNotAvailable\x10\0\x12\x0c\n\x08Required\x10\x01\x12\r\n\tAvailabl\
-    e\x10\x02\"7\n\x0eRecoveryStatus\x12\x0b\n\x07Nothing\x10\0\x12\x0c\n\
-    \x08Recovery\x10\x01\x12\n\n\x06Backup\x10\x02\"\xe2\x05\n\nCapability\
-    \x12\x1c\n\x12Capability_Bitcoin\x10\x01\x1a\x04\x80\xa6\x1d\x01\x12\x1b\
-    \n\x17Capability_Bitcoin_like\x10\x02\x12\x16\n\x12Capability_Binance\
-    \x10\x03\x12\x16\n\x12Capability_Cardano\x10\x04\x12\x1b\n\x11Capability\
-    _Crypto\x10\x05\x1a\x04\x80\xa6\x1d\x01\x12\x12\n\x0eCapability_EOS\x10\
-    \x06\x12\x17\n\x13Capability_Ethereum\x10\x07\x12\x17\n\x0fCapability_Li\
-    sk\x10\x08\x1a\x02\x08\x01\x12\x15\n\x11Capability_Monero\x10\t\x12\x12\
-    \n\x0eCapability_NEM\x10\n\x12\x15\n\x11Capability_Ripple\x10\x0b\x12\
-    \x16\n\x12Capability_Stellar\x10\x0c\x12\x14\n\x10Capability_Tezos\x10\r\
-    \x12\x12\n\x0eCapability_U2F\x10\x0e\x12\x1b\n\x11Capability_Shamir\x10\
-    \x0f\x1a\x04\x80\xa6\x1d\x01\x12!\n\x17Capability_ShamirGroups\x10\x10\
-    \x1a\x04\x80\xa6\x1d\x01\x12$\n\x1aCapability_PassphraseEntry\x10\x11\
-    \x1a\x04\x80\xa6\x1d\x01\x12\x15\n\x11Capability_Solana\x10\x12\x12!\n\
-    \x17Capability_Translations\x10\x13\x1a\x04\x80\xa6\x1d\x01\x12\x1f\n\
-    \x15Capability_Brightness\x10\x14\x1a\x04\x80\xa6\x1d\x01\x12\x1b\n\x11C\
-    apability_Haptic\x10\x15\x1a\x04\x80\xa6\x1d\x01\x12\x18\n\x0eCapability\
-    _BLE\x10\x16\x1a\x04\x80\xa6\x1d\x01\x12\x18\n\x0eCapability_NFC\x10\x17\
-    \x1a\x04\x80\xa6\x1d\x01\x12\x13\n\x0fCapability_Tron\x10\x18\x12\x19\n\
-    \x0fCapability_N4W1\x10\x19\x1a\x04\x80\xa6\x1d\x01\x12\x20\n\x16Capabil\
-    ity_TouchWakeup\x10\x1a\x1a\x04\x80\xa6\x1d\x01\x12\x12\n\x0eCapability_\
-    CKB\x10\x1c\x1a\x04\xc8\xf3\x18\x01\"\x04\x08\x1b\x10\x1b\"\x0c\n\nLockD\
-    evice\"&\n\x07SetBusy\x12\x1b\n\texpiry_ms\x18\x01\x20\x01(\rR\x08expiry\
-    Ms\"\x0c\n\nEndSession\"\xdd\x05\n\rApplySettings\x12\x1e\n\x08language\
-    \x18\x01\x20\x01(\tR\x08languageB\x02\x18\x01\x12\x14\n\x05label\x18\x02\
-    \x20\x01(\tR\x05label\x12%\n\x0euse_passphrase\x18\x03\x20\x01(\x08R\rus\
-    ePassphrase\x12\x1e\n\nhomescreen\x18\x04\x20\x01(\x0cR\nhomescreen\x120\
-    \n\x12_passphrase_source\x18\x05\x20\x01(\rR\x10PassphraseSourceB\x02\
-    \x18\x01\x12+\n\x12auto_lock_delay_ms\x18\x06\x20\x01(\rR\x0fautoLockDel\
-    ayMs\x12Y\n\x10display_rotation\x18\x07\x20\x01(\x0e2..hw.trezor.message\
-    s.management.DisplayRotationR\x0fdisplayRotation\x12=\n\x1bpassphrase_al\
-    ways_on_device\x18\x08\x20\x01(\x08R\x18passphraseAlwaysOnDevice\x12T\n\
-    \rsafety_checks\x18\t\x20\x01(\x0e2/.hw.trezor.messages.management.Safet\
-    yCheckLevelR\x0csafetyChecks\x123\n\x15experimental_features\x18\n\x20\
-    \x01(\x08R\x14experimentalFeatures\x129\n\x19hide_passphrase_from_host\
-    \x18\x0b\x20\x01(\x08R\x16hidePassphraseFromHost\x12'\n\x0fhaptic_feedba\
-    ck\x18\r\x20\x01(\x08R\x0ehapticFeedback\x12+\n\x11homescreen_length\x18\
+    to_wake\x18?\x20\x01(\x08R\ttapToWake\x12\"\n\x0csphincs_only\x18\xc8\
+    \x01\x20\x01(\x08R\x0bsphincsOnly\"C\n\x12BackupAvailability\x12\x10\n\
+    \x0cNotAvailable\x10\0\x12\x0c\n\x08Required\x10\x01\x12\r\n\tAvailable\
+    \x10\x02\"7\n\x0eRecoveryStatus\x12\x0b\n\x07Nothing\x10\0\x12\x0c\n\x08\
+    Recovery\x10\x01\x12\n\n\x06Backup\x10\x02\"\xe2\x05\n\nCapability\x12\
+    \x1c\n\x12Capability_Bitcoin\x10\x01\x1a\x04\x80\xa6\x1d\x01\x12\x1b\n\
+    \x17Capability_Bitcoin_like\x10\x02\x12\x16\n\x12Capability_Binance\x10\
+    \x03\x12\x16\n\x12Capability_Cardano\x10\x04\x12\x1b\n\x11Capability_Cry\
+    pto\x10\x05\x1a\x04\x80\xa6\x1d\x01\x12\x12\n\x0eCapability_EOS\x10\x06\
+    \x12\x17\n\x13Capability_Ethereum\x10\x07\x12\x17\n\x0fCapability_Lisk\
+    \x10\x08\x1a\x02\x08\x01\x12\x15\n\x11Capability_Monero\x10\t\x12\x12\n\
+    \x0eCapability_NEM\x10\n\x12\x15\n\x11Capability_Ripple\x10\x0b\x12\x16\
+    \n\x12Capability_Stellar\x10\x0c\x12\x14\n\x10Capability_Tezos\x10\r\x12\
+    \x12\n\x0eCapability_U2F\x10\x0e\x12\x1b\n\x11Capability_Shamir\x10\x0f\
+    \x1a\x04\x80\xa6\x1d\x01\x12!\n\x17Capability_ShamirGroups\x10\x10\x1a\
+    \x04\x80\xa6\x1d\x01\x12$\n\x1aCapability_PassphraseEntry\x10\x11\x1a\
+    \x04\x80\xa6\x1d\x01\x12\x15\n\x11Capability_Solana\x10\x12\x12!\n\x17Ca\
+    pability_Translations\x10\x13\x1a\x04\x80\xa6\x1d\x01\x12\x1f\n\x15Capab\
+    ility_Brightness\x10\x14\x1a\x04\x80\xa6\x1d\x01\x12\x1b\n\x11Capability\
+    _Haptic\x10\x15\x1a\x04\x80\xa6\x1d\x01\x12\x18\n\x0eCapability_BLE\x10\
+    \x16\x1a\x04\x80\xa6\x1d\x01\x12\x18\n\x0eCapability_NFC\x10\x17\x1a\x04\
+    \x80\xa6\x1d\x01\x12\x13\n\x0fCapability_Tron\x10\x18\x12\x19\n\x0fCapab\
+    ility_N4W1\x10\x19\x1a\x04\x80\xa6\x1d\x01\x12\x20\n\x16Capability_Touch\
+    Wakeup\x10\x1a\x1a\x04\x80\xa6\x1d\x01\x12\x12\n\x0eCapability_CKB\x10\
+    \x1c\x1a\x04\xc8\xf3\x18\x01\"\x04\x08\x1b\x10\x1b\"\x0c\n\nLockDevice\"\
+    &\n\x07SetBusy\x12\x1b\n\texpiry_ms\x18\x01\x20\x01(\rR\x08expiryMs\"\
+    \x0c\n\nEndSession\"\xdd\x05\n\rApplySettings\x12\x1e\n\x08language\x18\
+    \x01\x20\x01(\tR\x08languageB\x02\x18\x01\x12\x14\n\x05label\x18\x02\x20\
+    \x01(\tR\x05label\x12%\n\x0euse_passphrase\x18\x03\x20\x01(\x08R\rusePas\
+    sphrase\x12\x1e\n\nhomescreen\x18\x04\x20\x01(\x0cR\nhomescreen\x120\n\
+    \x12_passphrase_source\x18\x05\x20\x01(\rR\x10PassphraseSourceB\x02\x18\
+    \x01\x12+\n\x12auto_lock_delay_ms\x18\x06\x20\x01(\rR\x0fautoLockDelayMs\
+    \x12Y\n\x10display_rotation\x18\x07\x20\x01(\x0e2..hw.trezor.messages.ma\
+    nagement.DisplayRotationR\x0fdisplayRotation\x12=\n\x1bpassphrase_always\
+    _on_device\x18\x08\x20\x01(\x08R\x18passphraseAlwaysOnDevice\x12T\n\rsaf\
+    ety_checks\x18\t\x20\x01(\x0e2/.hw.trezor.messages.management.SafetyChec\
+    kLevelR\x0csafetyChecks\x123\n\x15experimental_features\x18\n\x20\x01(\
+    \x08R\x14experimentalFeatures\x129\n\x19hide_passphrase_from_host\x18\
+    \x0b\x20\x01(\x08R\x16hidePassphraseFromHost\x12'\n\x0fhaptic_feedback\
+    \x18\r\x20\x01(\x08R\x0ehapticFeedback\x12+\n\x11homescreen_length\x18\
     \x0e\x20\x01(\rR\x10homescreenLength\x12:\n\x1aauto_lock_delay_battery_m\
     s\x18\x0f\x20\x01(\rR\x16autoLockDelayBatteryMs\"T\n\x0eChangeLanguage\
     \x12\x1f\n\x0bdata_length\x18\x01\x20\x02(\rR\ndataLength\x12!\n\x0cshow\

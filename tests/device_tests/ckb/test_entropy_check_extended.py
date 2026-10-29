@@ -1,16 +1,15 @@
 """Entropy check on extended BIP-39 mnemonics (36/54/72 words).
 
-The device answers the check with XPUBs of the base wallet (first sub-phrase),
-and the host must derive the same from the entropy it verified. 256 bits is
-the upstream control: that path must keep working unchanged.
+An extended mnemonic is SPHINCS+ only and has no BIP-32 wallet, so the device
+proves the secret with a digest of the whole mnemonic instead of XPUBs. 256
+bits is the upstream control: that path must keep working unchanged.
 """
 
+import hashlib
+
 import pytest
-from mnemonic import Mnemonic
-from slip10 import SLIP10
 
 from trezorlib import device, messages
-from trezorlib.btc import get_public_node
 from trezorlib.debuglink import TrezorTestContext
 
 from ...common import MOCK_GET_ENTROPY
@@ -23,11 +22,21 @@ pytestmark = [
 ]
 
 
+def _reset_msg(strength: int) -> messages.ResetDevice:
+    return messages.ResetDevice(
+        strength=strength,
+        backup_type=messages.BackupType.Bip39,
+        skip_backup=True,
+        pin_protection=False,
+        passphrase_protection=False,
+        entropy_check=True,
+    )
+
+
 @pytest.mark.parametrize("strength", [256, 384, 576, 768])
 def test_entropy_check_extended(test_ctx: TrezorTestContext, strength: int):
-    session = test_ctx.get_seedless_session()
     path_xpubs = device.setup(
-        session,
+        test_ctx.get_seedless_session(),
         strength=strength,
         entropy_check_count=2,
         backup_type=messages.BackupType.Bip39,
@@ -36,17 +45,27 @@ def test_entropy_check_extended(test_ctx: TrezorTestContext, strength: int):
         passphrase_protection=False,
         _get_entropy=MOCK_GET_ENTROPY,
     )
-    assert path_xpubs
 
-    mnemonic = test_ctx.debug.state().mnemonic_secret.decode()
-    words = mnemonic.split(" ")
+    words = test_ctx.debug.state().mnemonic_secret.decode().split(" ")
     assert len(words) == strength // 32 * 3
-    base_phrase = " ".join(words[: len(words) // 3]) if len(words) > 24 else mnemonic
-    slip10 = SLIP10.from_seed(Mnemonic.to_seed(base_phrase, passphrase=""))
+    # XPUBs exist only for a standard mnemonic.
+    assert bool(path_xpubs) == (strength <= 256)
 
-    session = test_ctx.get_session()
-    for path, xpub in path_xpubs:
-        # the XPUBs proven during the check are the wallet's real XPUBs...
-        assert get_public_node(session, path).xpub == xpub
-        # ...and they are derived from the base phrase alone
-        assert slip10.get_xpub_from_path(path) == xpub
+
+@pytest.mark.parametrize("strength", [256, 384])
+def test_entropy_check_ready_digest(test_ctx: TrezorTestContext, strength: int):
+    """full_phrase_digest is set exactly for extended mnemonics, and it is the
+    SHA-256 of the mnemonic the device ends up storing."""
+    session = test_ctx.get_seedless_session()
+    session.call(_reset_msg(strength), expect=messages.EntropyRequest)
+    ready = session.call(
+        messages.EntropyAck(entropy=MOCK_GET_ENTROPY()),
+        expect=messages.EntropyCheckReady,
+    )
+    session.call(messages.EntropyCheckContinue(finish=True), expect=messages.Success)
+
+    if strength <= 256:
+        assert ready.full_phrase_digest is None
+    else:
+        secret = test_ctx.debug.state().mnemonic_secret
+        assert ready.full_phrase_digest == hashlib.sha256(secret).digest()
