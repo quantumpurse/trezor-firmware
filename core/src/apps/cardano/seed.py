@@ -133,7 +133,6 @@ def derive_and_store_secrets(ctx: Context, passphrase: str) -> None:
 
     words = mnemonic.get_secret()
     assert words is not None, "Mnemonic is not set"
-    words = mnemonic.bip39_base_phrase(words)
     # count ASCII spaces, add 1 to get number of words
     words_count = sum(c == 0x20 for c in words) + 1
 
